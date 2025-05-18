@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'rest_framework.authtoken',
     'schedulo',
 ]
 
@@ -82,8 +83,8 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         "NAME":'postgres',
-        'USER':'postgres.euzurypqfvojvvnnhqrb',
-        'PASSWORD':'schedulo',
+        'USER':'postgres.nndypwqjxnidkxtcvskx',
+        'PASSWORD':'RrkhMpyVxcknWbXv',
         'HOST':'aws-0-ap-south-1.pooler.supabase.com',
         'PORT':'6543',
         # "OPTIONS": {

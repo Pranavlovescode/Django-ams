@@ -1,13 +1,13 @@
-
+from django.contrib.auth.models import User as DjangoUser
 from django.db import models
-from django.contrib.auth.models import AbstractUser
 from django.core.validators import MinValueValidator
 import uuid
 
 # User model
-class User(models.Model):
+# UserProfile model as an extension of Django's User
+class UserProfile(models.Model):
     """
-    Extended User model with additional fields for the appointment management system.
+    Profile for User with additional fields for the appointment management system.
     """
     USER_TYPES = (
         ('admin', 'Admin'),
@@ -15,11 +15,11 @@ class User(models.Model):
         ('employee', 'Employee'),
         ('customer', 'Customer'),
     )
-    user_id = models.UUIDField(primary_key=True,default=uuid.uuid4,editable=False)
-    username = models.CharField(max_length=100,unique=True)
+    
+    user = models.OneToOneField(DjangoUser, on_delete=models.CASCADE, related_name='profile')
+    profile_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     user_type = models.CharField(max_length=10, choices=USER_TYPES, default='customer')
     phone_number = models.CharField(max_length=15, blank=True, null=True)
-    profile_picture = models.ImageField(upload_to='profile_pictures/', blank=True, null=True)
     address = models.TextField(blank=True, null=True)
     date_of_birth = models.DateField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -38,7 +38,7 @@ class Outlet(models.Model):
     address = models.TextField()
     contact_number = models.CharField(max_length=15)
     email = models.EmailField(blank=True, null=True)
-    manager = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='managed_outlets', 
+    manager = models.ForeignKey(UserProfile, on_delete=models.SET_NULL, null=True, related_name='managed_outlets', 
                               limit_choices_to={'user_type': 'manager'})
     opening_time = models.TimeField()
     closing_time = models.TimeField()
@@ -125,10 +125,10 @@ class Appointment(models.Model):
     )
     
     appointment_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
-    customer = models.ForeignKey(User, on_delete=models.CASCADE, related_name='appointments',
+    customer = models.ForeignKey(UserProfile, on_delete=models.CASCADE, related_name='appointments',
                                limit_choices_to={'user_type': 'customer'})
     outlet = models.ForeignKey(Outlet, on_delete=models.CASCADE, related_name='appointments')
-    employee = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, 
+    employee = models.ForeignKey(UserProfile, on_delete=models.SET_NULL, null=True, blank=True, 
                                related_name='assigned_appointments', 
                                limit_choices_to={'user_type': 'employee'})
     date = models.DateField()
