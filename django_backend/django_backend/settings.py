@@ -38,7 +38,11 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'schedulo',
 ]
+
+# Custom user model
+# AUTH_USER_MODEL = 'schedulo.User'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -77,10 +81,15 @@ WSGI_APPLICATION = 'django_backend.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        "OPTIONS": {
-            "service": "my_service",
-            "passfile": ".my_pgpass",
-        },
+        "NAME":'postgres',
+        'USER':'postgres.euzurypqfvojvvnnhqrb',
+        'PASSWORD':'schedulo',
+        'HOST':'aws-0-ap-south-1.pooler.supabase.com',
+        'PORT':'6543',
+        # "OPTIONS": {
+        #     "service": "my_service",
+        #     "passfile": ".my_pgpass",
+        # },
     }
 }
 
