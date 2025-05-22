@@ -136,3 +136,29 @@ def signup_api(request):
         'token': token.key,
         'user': user_data
     }, status=status.HTTP_201_CREATED)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def logout_api(request):
+    """
+    API endpoint for user logout
+    Deletes the user's authentication token
+    """
+    auth_header = request.headers.get('Authorization')
+    if auth_header and auth_header.startswith('Token '):
+        token_key = auth_header.split(' ')[1]
+        try:
+            token = Token.objects.get(key=token_key)
+            token.delete()
+            return Response(
+                {'message': 'Successfully logged out'}, 
+                status=status.HTTP_200_OK
+            )
+        except Token.DoesNotExist:
+            pass
+                
+    return Response(
+        {'message': 'Invalid token or not authenticated'}, 
+        status=status.HTTP_401_UNAUTHORIZED
+    )

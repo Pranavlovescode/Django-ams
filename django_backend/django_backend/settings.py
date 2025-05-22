@@ -28,6 +28,13 @@ DEBUG = True
 ALLOWED_HOSTS = ['127.0.0.1','schedulo.pranavtitambe.in']
 
 
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
+        # Other authentication classes if needed
+    ],
+}
+
 # Application definition
 
 INSTALLED_APPS = [
