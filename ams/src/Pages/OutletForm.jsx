@@ -27,12 +27,9 @@ export default function OutletForm() {
   const [formData, setFormData] = useState({
     outlet_name: "",
     email: "",
-    state: "",
-    district: "",
     address: "",
-    google_map_link: "",
-    pincode: "",
     telephone_number: "",
+    manager_id:''
   });
   useEffect(() => {
     console.log(selectedState);
