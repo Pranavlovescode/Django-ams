@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-fh*1&xb*)+ye7kzqs!_%^8=y&z&rsmdlym*de$40z8t&*q$kl%
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1','schedulo.pranavtitambe.in']
+ALLOWED_HOSTS = ['127.0.0.1','schedulo.pranavtitambe.in','localhost']
 
 
 REST_FRAMEWORK = {
@@ -47,12 +47,15 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'schedulo',
+    'schedulo_appointment',
+    'corsheaders',
 ]
-
+CORS_ALLOW_ALL_ORIGINS = True
 # Custom user model
 # AUTH_USER_MODEL = 'schedulo.User'
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',

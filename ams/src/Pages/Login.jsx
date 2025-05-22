@@ -5,8 +5,8 @@ import axios from "axios";
 
 function Login() {
   const [credentials, setCredentials] = useState({
-    mobile_number: "",
-    outlet_password: "",
+    username: "",
+    password: "",
   });
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -18,15 +18,15 @@ function Login() {
       console.log("Starting login process...");
       console.log(credentials)
       const response = await axios.post(
-        "http://localhost:5000/api/get-otp",
-        credentials,);
+        "http://localhost:8000/api/auth/login/",
+        credentials);
 
       console.log("Received response:", response);
       const data = response.data;
 
-      localStorage.setItem("OTP", data.otp);
+      localStorage.setItem("token", data.token);
       console.log("Successful login", data);
-      navigate("/verify-otp");
+      navigate("/dashboard");
       console.log("Navigated to Verify OTP page");
       // alert("Successful login");
     } catch (error) {
@@ -64,14 +64,14 @@ function Login() {
                     htmlFor="userName"
                     className="mb-2 inline-block text-sm text-bue-800 sm:text-base"
                   >
-                    Mobile Number
+                    Username
                   </label>
                   <input
                     id="mobile_number"
                     type="text"
-                    name="mobile_number"
+                    name="username"
                     onChange={(e) => {
-                      setCredentials({ ...credentials, mobile_number: e.target.value });
+                      setCredentials({ ...credentials, username: e.target.value });
                     }}
                     className="w-full rounded border bg-slate-200 px-3 py-2 text-gray-800 outline-none ring-grey-300 transition duration-100 focus:ring"
                   />
@@ -91,7 +91,7 @@ function Login() {
                     onChange={(e) => {
                       setCredentials({
                         ...credentials,
-                        outlet_password: e.target.value,
+                        password: e.target.value,
                       });
                     }}
                     className="w-full rounded border bg-gray-50 px-3 py-2 text-gray-800 outline-none ring-blue-300 transition duration-100 focus:ring"
