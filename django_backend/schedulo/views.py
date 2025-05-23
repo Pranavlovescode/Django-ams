@@ -7,7 +7,7 @@ from django.contrib.auth.hashers import make_password
 from django.contrib.auth import get_user_model, authenticate
 from schedulo.models import UserProfile
 from django.contrib.auth.models import User as DjangoUser
-from .serialzers import UserSerialzer
+from .serialzers import UserProfileSerializer
 # Create your views here.
 
 # Authencation routes

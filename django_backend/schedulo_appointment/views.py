@@ -35,12 +35,25 @@ def appointments_details(request):
 @permission_classes([IsAuthenticated])
 def outlets(request):
     if request.method == "GET":
-        outlets = Outlet.objects.get()
-        outlet_serialzer = OutletSerializer(outlets)
-        return Response({
-            'message':"Outlet fetched successfuly",
-            "outlets":outlet_serialzer
-        },status=status.HTTP_200_OK)
+        try:
+            outlets = Outlet.objects.select_related('manager').all()
+            
+            # Check if outlets exist
+            if not outlets.exists():
+                return Response({
+                    'message': "No outlets found"
+                }, status=status.HTTP_404_NOT_FOUND)
+                
+            outlet_serializer = OutletSerializer(outlets, many=True)
+            return Response({
+                'message': "Outlets fetched successfully",
+                "outlets": outlet_serializer.data
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({
+                'message': f"Error fetching outlets: {str(e)}"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
     if request.method == "POST":
         name = request.data.get('name')
@@ -51,10 +64,12 @@ def outlets(request):
         opening_time = request.data.get('opening_time')
         closing_time = request.data.get('closing_time')
 
+        manager = UserProfile.objects.get(profile_id=manager_id)
 
-        new_outlet = Outlet(name=name,address=address,contact_number=contact_number,email=email,manager=manager_id,opening_time=opening_time,closing_time=closing_time)
-        
-        if OutletSerializer(new_outlet).is_valid():
+
+        new_outlet = Outlet(name=name,address=address,contact_number=contact_number,email=email,manager=manager,opening_time=opening_time,closing_time=closing_time)
+        valid = OutletSerializer(new_outlet)
+        if valid:
             new_outlet.save()
             print(new_outlet)
             return Response({
