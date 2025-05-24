@@ -93,7 +93,12 @@ def services_function(request):
     outlet_id = request.query_params.get('outlet_id')
     if request.method == "GET":
         try:
-            services = Service.objects.filter(outlets__outlet_id=outlet_id)
+            if outlet_id:
+                # Filter by outlet_id and is_active=True
+                services = Service.objects.filter(outlets__outlet_id=outlet_id, is_active=True).distinct()
+            else:
+                # Get only active services if no outlet specified
+                services = Service.objects.filter(is_active=True)
             
             # When querying multiple objects, use many=True
             serializer = ServiceSerializer(services, many=True)
@@ -145,4 +150,78 @@ def services_function(request):
         except Exception as e:
             return Response({
                 'message': f"Error saving services: {str(e)}"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+
+"""Package Routes"""
+@api_view(["GET","POST"])
+@permission_classes([IsAuthenticated])
+def package_function(request):
+    if request.method == "GET":
+        try:
+            packages = Package.objects.filter(outlets__outlet_id=request.data.get('outlet_id')).distinct()
+            serializer = PackageSerializer(packages, many=True)
+            return Response({
+                'message': "Packages fetched successfully",
+                "packages": serializer.data
+            }, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({
+                'message': f"Error fetching packages: {str(e)}"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    if request.method == "POST":
+        try:
+            name = request.data.get('name')
+            description = request.data.get('description')
+            price = request.data.get('price')
+            validity_days = request.data.get('validity_days')
+            outlet_id = request.data.get('outlet_id')
+
+
+            outlet = Outlet.objects.get(outlet_id=outlet_id)
+
+            new_package = Package(
+                name=name,
+                description=description,
+                price=price,
+                validity_days=validity_days,
+                is_active=True
+            )
+            new_package.save()
+            new_package.outlets.add(outlet)
+            services_ids = request.data.get('services', [])
+
+            if not isinstance(services_ids, list):
+                return Response({
+                    'message': "Services should be a list of service IDs"
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Set the services for the package
+            if not services_ids:
+                return Response({
+                    'message': "At least one service must be provided"
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            services = Service.objects.filter(service_id__in=services_ids)
+            if not services.exists():
+                return Response({
+                    'message': "One or more services not found"
+                }, status=status.HTTP_404_NOT_FOUND)
+            
+            new_package.services.set(services)  # Assuming services is a list of service IDs
+
+            serializer_package = PackageSerializer(new_package)
+
+            return Response({
+                'message': "Package created successfully",
+                'package': serializer_package.data
+            }, status=status.HTTP_201_CREATED)
+        except Outlet.DoesNotExist:
+            return Response({
+                'message': f"Outlet with ID {outlet_id} not found"
+            }, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({
+                'message': f"Error creating package: {str(e)}"
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

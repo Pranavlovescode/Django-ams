@@ -21,14 +21,15 @@ class OutletSerializer(serializers.ModelSerializer):
         fields = ['outlet_id','name','email','contact_number','manager','address','opening_time','closing_time','is_active']
 
 class ServiceSerializer(serializers.ModelSerializer):
-    
+    outlets = OutletSerializer(many=True)
     class Meta:
         model = Service
         fields = ['service_id','name','description','duration','price','category','is_active','outlets','created_at','updated_at']
 
 class PackageSerializer(serializers.ModelSerializer):
-    outlets = OutletSerializer()
-    services = ServiceSerializer()
+    services = ServiceSerializer(many=True)
+    outlets = OutletSerializer(many=True)
+
     class Meta:
         model = Package
         fields = ['package_id','name','description','price','services','products','is_active','validity_days','outlets','created_at','updated_at']
