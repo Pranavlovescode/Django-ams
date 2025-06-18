@@ -27,9 +27,67 @@ def appointments_details(request):
 
     
     if request.method == 'POST':
-        customer_name = request.data.get('customer_name')
-        customer_email = request.data.get('customer_email')
-        customer_mobile_phone = request.data.get('customer_mobile_phone')
+        customer_id = request.data.get('customer_id')
+        outlet_id = request.data.get('outlet_id')
+        employee_id = request.data.get('employee_id')
+        services_ids = request.data.get('services_id')
+        packages_ids = request.data.get('packages_id')
+        appointment_time = request.data.get('appointment_time')
+        services = []
+        packages = []
+
+        for service_id in services_ids:
+            try:
+                service = Service.objects.get(service_id=service_id)
+                services.append(service)
+            except Service.DoesNotExist:
+                return Response({
+                    'message': f"Service with ID {service_id} does not exist"
+                }, status=status.HTTP_404_NOT_FOUND)
+
+        for package_id in packages_ids:
+            try:
+                package = Package.objects.get(package_id=package_id)
+                packages.append(package)
+            except Package.DoesNotExist:
+                return Response({
+                    'message': f"Package with ID {package_id} does not exist"
+                }, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            customer = UserProfile.objects.get(profile_id=customer_id)
+            outlet = Outlet.objects.get(outlet_id=outlet_id)
+            employee = UserProfile.objects.get(profile_id=employee_id)
+            new_appointment = Appointment(
+                customer=customer,
+                outlet=outlet,
+                employee=employee,
+                appointment_time=appointment_time,
+                status='pending'
+            )
+            
+            new_appointment.save()  # Save before setting ManyToMany
+
+            if services:
+                new_appointment.services.set(services)
+
+            if packages:
+                new_appointment.package.set(packages)
+            
+            appointment_serializer = AppointmentSerializer(new_appointment)
+            return Response({
+                'message': 'Appointment created successfully',
+                'appointment': appointment_serializer.data
+            }, status=status.HTTP_201_CREATED)
+        
+
+        except UserProfile.DoesNotExist:
+            return Response({
+                'message': "UserProfile not found for the provided IDs"
+            }, status=status.HTTP_404_NOT_FOUND)
+
+
+
 
 
 """Outlet Routes"""

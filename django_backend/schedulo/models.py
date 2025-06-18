@@ -131,11 +131,9 @@ class Appointment(models.Model):
     employee = models.ForeignKey(UserProfile, on_delete=models.SET_NULL, null=True, blank=True, 
                                related_name='assigned_appointments', 
                                limit_choices_to={'user_type': 'employee'})
-    date = models.DateField()
-    start_time = models.TimeField()
-    end_time = models.TimeField()
+    appointment_time = models.DateTimeField()
     services = models.ManyToManyField(Service, related_name='appointments', blank=True)
-    package = models.ForeignKey(Package, on_delete=models.SET_NULL, null=True, blank=True, 
+    packages = models.ManyToManyField(Package, null=True, blank=True,
                              related_name='appointments')
     status = models.CharField(max_length=15, choices=STATUS_CHOICES, default='pending')
     notes = models.TextField(blank=True, null=True)

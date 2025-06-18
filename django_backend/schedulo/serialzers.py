@@ -36,9 +36,10 @@ class PackageSerializer(serializers.ModelSerializer):
 
 class AppointmentSerializer(serializers.ModelSerializer):
     outlet = OutletSerializer()
-    employee = UserSerializer()
-    services=ServiceSerializer()
-    package=PackageSerializer()
+    employee = UserProfileSerializer()
+    services=ServiceSerializer(many=True)
+    packages=PackageSerializer(many=True)
+    customer = UserProfileSerializer()
     class Meta:
         model = Appointment
-        fields = ['appointment_id','customer','outlet','employee','date','start_time','end_time','services','package','status','notes','created_at','updated_at']
+        fields = ['appointment_id','customer','outlet','employee','appointment_time','services','packages','status','notes','created_at','updated_at']
