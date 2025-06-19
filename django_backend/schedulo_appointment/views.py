@@ -13,13 +13,13 @@ from datetime import timedelta
 
 """ Appointment Routes"""
 
-@api_view(["GET","POST"])
+@api_view(["GET","POST","PATCH","DELETE"])
 @permission_classes([IsAuthenticated])
 def appointments_details(request):
     if request.method == "GET":
         outlet_id = request.query_params.get('outlet_id')
-        appointment = Appointment.objects.get(outlet=outlet_id)
-        appointment_serializer = AppointmentSerializer(appointment)
+        appointment = Appointment.objects.filter(outlet__outlet_id=outlet_id)
+        appointment_serializer = AppointmentSerializer(appointment,many=True)
         return Response({
             'message': 'Appointment found for outlet id',
             'appointment': appointment_serializer.data
@@ -72,7 +72,7 @@ def appointments_details(request):
                 new_appointment.services.set(services)
 
             if packages:
-                new_appointment.package.set(packages)
+                new_appointment.packages.set(packages)
             
             appointment_serializer = AppointmentSerializer(new_appointment)
             return Response({
@@ -85,6 +85,89 @@ def appointments_details(request):
             return Response({
                 'message': "UserProfile not found for the provided IDs"
             }, status=status.HTTP_404_NOT_FOUND)
+        
+
+    if request.method == "PATCH":
+        appointment_id = request.query_params.get('appointment_id')
+        
+        try:
+            appointment = Appointment.objects.get(appointment_id=appointment_id)
+
+            services_ids = request.data.get('services_id', [])
+            packages_ids = request.data.get('packages_id', [])
+
+            services = []
+            packages = []
+
+            # Validate services if provided
+            if services_ids:
+                for service_id in services_ids:
+                    try:
+                        service = Service.objects.get(service_id=service_id)
+                        services.append(service)
+                    except Service.DoesNotExist:
+                        return Response({
+                            'message': f"Service with ID {service_id} does not exist"
+                        }, status=status.HTTP_404_NOT_FOUND)
+
+            # Validate packages if provided
+            if packages_ids:
+                for package_id in packages_ids:
+                    try:
+                        package = Package.objects.get(package_id=package_id)
+                        packages.append(package)
+                    except Package.DoesNotExist:
+                        return Response({
+                            'message': f"Package with ID {package_id} does not exist"
+                        }, status=status.HTTP_404_NOT_FOUND)
+
+            # Use DRF serializer to validate and update standard fields
+            serializer = AppointmentSerializer(appointment, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+
+                # Manually update many-to-many fields after saving
+                if services_ids:
+                    appointment.services.set(services)
+                if packages_ids:
+                    appointment.package.set(packages)
+
+                return Response({
+                    'message': "Appointment updated successfully",
+                    'appointment': AppointmentSerializer(appointment).data
+                }, status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'message': "Invalid data",
+                    'errors': serializer.errors
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+        except Appointment.DoesNotExist:
+            return Response({
+                'message': f"Appointment with ID {appointment_id} does not exist"
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+    
+    if request.method == "DELETE":
+        appointment_id = request.query_params.get('appointment_id')
+
+        if not appointment_id:
+            return Response({
+                'message': "Missing appointment_id in query parameters"
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            appointment = Appointment.objects.get(appointment_id=appointment_id)
+            appointment.delete()
+            return Response({
+                'message': "Appointment deleted successfully"
+            }, status=status.HTTP_200_OK) 
+
+        except Appointment.DoesNotExist:
+            return Response({
+                'message': f"Appointment with ID {appointment_id} does not exist"
+            }, status=status.HTTP_404_NOT_FOUND)
+
 
 
 
