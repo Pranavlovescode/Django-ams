@@ -5,9 +5,9 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.authtoken.models import Token
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth import get_user_model, authenticate
-from schedulo.models import UserProfile
+from schedulo.models import UserProfile,Outlet
 from django.contrib.auth.models import User as DjangoUser
-from .serialzers import UserProfileSerializer
+from .serialzers import UserProfileSerializer, OutletSerializer
 # Create your views here.
 
 # Authencation routes
@@ -44,7 +44,7 @@ def login_api(request):
     if not django_user:
         # Try with username
         try:
-            django_user_obj = DjangoUser.objects.get(username=username)
+            django_user_obj = DjangoUser.objects.get(username=username)            
             django_user = authenticate(username=django_user_obj.username, password=password)
         except DjangoUser.DoesNotExist:
             return Response(
@@ -53,24 +53,30 @@ def login_api(request):
             )
         
     if django_user:
-        # Get or create token
         token, created = Token.objects.get_or_create(user=django_user)
-        
-        # Get or create custom user
+
         try:
-            custom_user = DjangoUser.objects.get(username=django_user.username)
-        except DjangoUser.DoesNotExist:
-            # Return the message that the user does not exist
+            custom_user = UserProfile.objects.get(user=django_user)
+            print(f'Custom user found: {custom_user.profile_id}')
+        except UserProfile.DoesNotExist:
             return Response(
-                {'message': 'User does not exist'},
-                status=status.HTTP_401_UNAUTHORIZED
+                {'message': 'User profile does not exist'},
+                status=status.HTTP_404_NOT_FOUND
             )
-        
-        serializer = UserProfile(custom_user)
+
+        # Try to get outlet (optional)
+        outlet = Outlet.objects.filter(manager=custom_user).first()
+
+        serializer = UserProfileSerializer(custom_user)
+        outlet_serializer = OutletSerializer(outlet) if outlet else None
+
         return Response({
             'message': 'Login successful',
-            'token': token.key
+            'token': token.key,
+            'logged_in_user': serializer.data,
+            'outlet': outlet_serializer.data if outlet_serializer else None
         }, status=status.HTTP_200_OK)
+
     else:
         return Response(
             {'message': 'Invalid credentials'},
@@ -148,6 +154,7 @@ def logout_api(request):
     auth_header = request.headers.get('Authorization')
     if auth_header and auth_header.startswith('Token '):
         token_key = auth_header.split(' ')[1]
+        print(f'Logout attempt for token: {token_key}')
         try:
             token = Token.objects.get(key=token_key)
             token.delete()

@@ -1,51 +1,47 @@
-
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import Select from "react-select"; // Import react-select for dynamic dropdown
-import { useNavigate } from "react-router-dom";
+import Select from "react-select";
 import AsyncSelect from "react-select/async";
+import { useNavigate } from "react-router-dom";
 
 const AppointmentForm = ({ appointment, onSave, onCancel }) => {
   const [formData, setFormData] = useState({
-    customer_name: "",
-    customer_email: "",
+    servicesId: [],
+    appointmentTime: "",
+    packagesId: [],
+    userId: 0,
+    outletId: 0,
     customer_mobile_phone: "",
-    status: "pending",
-    time: "",
-    services: [],
-    packages: [],
-    staff_id: "",
-    outlet_id: "",
   });
 
   const [allServices, setAllServices] = useState([]);
   const [allPackages, setAllPackages] = useState([]);
-  const [mobileOptions, setMobileOptions] = useState([]); // Mobile number options
-  const [isUserFound, setIsUserFound] = useState(true); // To track if user found
-  const navigate = useNavigate(); // To navigate to Add User page
+  const navigate = useNavigate();
+  const token = localStorage.getItem("token") || "";
 
-  // Fetch services and packages when the component mounts
+  // Fetch services and packages on mount
   useEffect(() => {
     const fetchServicesAndPackages = async () => {
       try {
-        const servicesResponse = await axios.get(
-          "http://localhost:5000/api/services"
-        );
-        const packagesResponse = await axios.get(
-          "http://localhost:5000/api/packages"
-        );
+        const [servicesResponse, packagesResponse] = await Promise.all([
+          axios.get(`${import.meta.env.VITE_URL}/api/services/get`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          axios.get(`${import.meta.env.VITE_URL}/api/packages/get`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+        ]);
 
-        // Map services and packages to the react-select format (label, value)
         const servicesOptions = servicesResponse.data.map((service) => ({
-          label: service.service_name,
-          value: service._id, // Assuming _id is the correct field for the service ID
+          label: service.name,
+          id: service.id,
           service_price: Number(service.price),
         }));
 
         const packagesOptions = packagesResponse.data.map((pkg) => ({
-          label: pkg.package_name,
-          value: pkg._id,
-          pkg_price: Number(pkg.price), // Assuming _id is the correct field for the package ID
+          label: pkg.name,
+          id: pkg.id,
+          pkg_price: Number(pkg.price),
         }));
 
         setAllServices(servicesOptions);
@@ -54,136 +50,97 @@ const AppointmentForm = ({ appointment, onSave, onCancel }) => {
         console.error("Error fetching services or packages:", error);
       }
     };
+
     fetchServicesAndPackages();
-  }, []);
+  }, [token]);
 
+  // Set outlet ID from localStorage
   useEffect(() => {
-    // const userData = JSON.parse();
-    const userData = JSON.parse(localStorage.getItem("auth_data"));
-    const staffId = userData ? userData.user_data._id : null;
-    const outlet_id = userData ? userData.user_data.outlet_id : null;
-
-    // console.log(userData);
-    // console.log(staffId)
-    console.log("List of packages",allPackages, "List of services",allServices);
-    console.log(outlet_id);
-    if (staffId) {
-      setFormData((prevState) => ({
-        ...prevState,
-        staff_id: staffId,
-      }));
-    }
-  }, [allPackages, allServices]);
-
-  useEffect(() => {
-    // const userData = JSON.parse();
-    const userData = JSON.parse(localStorage.getItem("auth_data"));
-    const outlet = localStorage.getItem("outlet_id");
-    // const staffId = userData ? userData.user_data._id : null;
-    const outlet_id = outlet ? outlet : null;
-
-    // console.log(userData);
-    // console.log(staffId)
-    console.log(outlet_id);
+    const outlet = JSON.parse(localStorage.getItem("outlet"));
+    const outlet_id = outlet ? outlet.id : null;
     if (outlet_id) {
-      setFormData((prevState) => ({
-        ...prevState,
-        outlet_id: outlet_id,
+      setFormData((prev) => ({
+        ...prev,
+        outletId: outlet_id,
       }));
     }
   }, []);
 
-  // useEffect(() => {
-  //   if (appointment) {
-  //     setFormData({
-  //       ...appointment,
-  //       services: appointment.services?.map((s) => {s._id,s.service_name,s.price}) || [],
-  //       packages: appointment.packages?.map((p) => {p._id,p.package_name,p.price}) || [],
-  //       time: appointment.time || "",
-  //     });
-  //   }
-  // }, [appointment]);
+  // Pre-fill form if editing an appointment
   useEffect(() => {
     if (appointment) {
-      setFormData({
+      setFormData((prev) => ({
+        ...prev,
         ...appointment,
-        services: appointment.services?.map((s) => ({
-          _id: s._id,
-          service_name: s.service_name,
-          price: s.price
-        })) || [],
-        packages: appointment.packages?.map((p) => ({
-          _id: p._id,
-          package_name: p.package_name,
-          price: p.price
-        })) || [],
-        
-      });
+        servicesId: appointment.servicesId?.map((s) => s.id) || [],
+        packagesId: appointment.packagesId?.map((p) => p.id) || [],
+        appointmentTime: appointment.appointmentTime || "",
+        customer_mobile_phone: appointment.customer_mobile_phone || "",
+        userId: appointment.userId || 0,
+      }));
     }
   }, [appointment]);
-  
 
+  // Handle input changes
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
+    setFormData((prev) => ({
+      ...prev,
       [name]: value,
-    });
+    }));
   };
 
-  // Handle service selection using react-select
+  // Handle services selection
   const handleServiceChange = (selectedOptions) => {
     const selectedServices = selectedOptions
-      ? selectedOptions.map((option) => ({
-          _id: option.value,
-          name: option.label,
-          price: option.service_price,
-        }))
-      : [];
-    setFormData((prevState) => ({
-      ...prevState,
-      services: selectedServices,
+        ? selectedOptions.map((option) => option.id)
+        : [];
+    setFormData((prev) => ({
+      ...prev,
+      servicesId: selectedServices,
     }));
   };
-  
+
+  // Handle packages selection
   const handlePackageChange = (selectedOptions) => {
     const selectedPackages = selectedOptions
-      ? selectedOptions.map((option) => ({
-          _id: option.value,
-          name: option.label,
-          price: option.pkg_price,
-        }))
-      : [];
-    setFormData((prevState) => ({
-      ...prevState,
-      packages: selectedPackages,
+        ? selectedOptions.map((option) => option.id)
+        : [];
+    setFormData((prev) => ({
+      ...prev,
+      packagesId: selectedPackages,
     }));
   };
-  
 
-  // Fetch mobile numbers based on input
+  // Load mobile numbers dynamically
   const fetchMobileNumbers = async (inputValue) => {
     if (!inputValue) return [];
     try {
       const response = await axios.get(
-        `http://localhost:5000/api/get-users?mobile_phone=${inputValue}`
+          `${import.meta.env.VITE_URL}/api/user/mobile?mobile_number=${inputValue}`,
+          { headers: { Authorization: `Bearer ${token}` } }
       );
-      const users = response.data;
 
-      if (users.length > 0) {
-        setIsUserFound(true);
-        return users.map((user) => ({
-          label: `${user.full_name} (${user.mobile_phone})`,
-          value: user.mobile_phone,
+      if (response.data && !Array.isArray(response.data)) {
+        const user = response.data;
+        return [
+          {
+            label: `${user.username || "Unknown"} (${user.mobileNumber})`,
+            value: user.mobileNumber,
+            userData: user,
+          },
+        ];
+      } else if (Array.isArray(response.data) && response.data.length > 0) {
+        return response.data.map((user) => ({
+          label: `${user.name || "Unknown"} (${user.mobileNumber})`,
+          value: user.mobileNumber,
           userData: user,
         }));
       } else {
-        setIsUserFound(false);
         return [];
       }
     } catch (error) {
       console.error("Error fetching users:", error);
-      setIsUserFound(false);
       return [];
     }
   };
@@ -191,15 +148,14 @@ const AppointmentForm = ({ appointment, onSave, onCancel }) => {
   // Handle mobile number selection
   const handleMobileChange = (selectedOption) => {
     if (selectedOption?.userData) {
-      setFormData((prevState) => ({
-        ...prevState,
-        customer_name: selectedOption.userData.full_name,
-        customer_email: selectedOption.userData.email || "",
-        customer_mobile_phone: selectedOption.userData.mobile_phone,
+      setFormData((prev) => ({
+        ...prev,
+        customer_mobile_phone: selectedOption.userData.mobileNumber,
+        userId: selectedOption.userData.id,
       }));
     } else {
-      setFormData((prevState) => ({
-        ...prevState,
+      setFormData((prev) => ({
+        ...prev,
         customer_mobile_phone: selectedOption?.value || "",
       }));
     }
@@ -210,15 +166,15 @@ const AppointmentForm = ({ appointment, onSave, onCancel }) => {
     navigate("/add-user");
   };
 
-  // Custom message when no options are available
+  // Custom "No Options" message with Add User button
   const noOptionsMessage = () => (
-    <button
-      type="button"
-      className="p-2 bg-green-500 text-white rounded-md w-full text-center"
-      onClick={handleAddUser}
-    >
-      Add New User
-    </button>
+      <button
+          type="button"
+          className="p-2 bg-green-500 text-white rounded-md w-full text-center"
+          onClick={handleAddUser}
+      >
+        Add New User
+      </button>
   );
 
   const handleSubmit = (e) => {
@@ -226,137 +182,94 @@ const AppointmentForm = ({ appointment, onSave, onCancel }) => {
     onSave(formData);
   };
 
-  // Pre-select services and packages by matching their IDs
+  // Pre-select services and packages
   const selectedServices = allServices.filter((service) =>
-    formData.services?.some((selectedService) => selectedService?._id === service.value)
+      formData.servicesId.includes(service.id)
   );
-  console.log(selectedServices)
   const selectedPackages = allPackages.filter((pkg) =>
-    formData.packages?.some((selectedPackage) => selectedPackage?._id === pkg.value)
+      formData.packagesId.includes(pkg.id)
   );
-  
-  
 
   return (
-    <div className="p-4">
-      <h1 className="text-xl mb-4">Appointment Form</h1>
-      <form onSubmit={handleSubmit}>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* <input
-            type="tel"
-            name="customer_mobile_phone"
-            value={formData.customer_mobile_phone}
-            onChange={handleChange}
-            placeholder="Customer Mobile Phone"
-            className="p-2 border rounded-md"
-            required
-          /> */}
-          {/* Mobile Phone Field with AsyncSelect */}
-          <div className="relative">
-            <AsyncSelect
-              cacheOptions
-              loadOptions={fetchMobileNumbers} // Dynamically fetch mobile numbers
-              onChange={handleMobileChange}
-              placeholder="Customer Mobile Phone"
-              isClearable
-              defaultOptions={false}
-              noOptionsMessage={noOptionsMessage} // Show "Add New User" button if no match found
-              value={
-                formData.customer_mobile_phone
-                  ? {
-                      label: formData.customer_mobile_phone,
-                      value: formData.customer_mobile_phone,
-                    }
-                  : null
-              }
+      <div className="p-4">
+        <h1 className="text-xl mb-4">Appointment Form</h1>
+        <form onSubmit={handleSubmit}>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="relative">
+              <AsyncSelect
+                  cacheOptions
+                  loadOptions={fetchMobileNumbers}
+                  onChange={handleMobileChange}
+                  placeholder="Customer Mobile Phone"
+                  isClearable
+                  defaultOptions={false}
+                  noOptionsMessage={noOptionsMessage}
+                  value={
+                    formData.customer_mobile_phone
+                        ? {
+                          label: formData.customer_mobile_phone,
+                          value: formData.customer_mobile_phone,
+                        }
+                        : null
+                  }
+              />
+            </div>
+
+            <input
+                type="datetime-local"
+                name="appointmentTime"
+                value={formData.appointmentTime}
+                onChange={handleChange}
+                className="p-2 border rounded-md"
+                required
             />
           </div>
 
-          <input
-            type="text"
-            name="customer_name"
-            value={formData.customer_name}
-            onChange={handleChange}
-            placeholder="Customer Name"
-            className="p-2 border rounded-md"
-          />
-          <input
-            type="email"
-            name="customer_email"
-            value={formData.customer_email}
-            onChange={handleChange}
-            placeholder="Customer Email"
-            className="p-2 border rounded-md"
-          />
-          <input
-            type="datetime-local"
-            name="time"
-            value={formData.time}
-            onChange={handleChange}
-            placeholder="Time"
-            className="p-2 border rounded-md"
-          />
-        </div>
+          <div className="mb-4">
+            <label className="block mb-1 font-medium">Select Services:</label>
+            <Select
+                isMulti
+                options={allServices}
+                getOptionLabel={(option) => option.label}
+                getOptionValue={(option) => option.id}
+                value={allServices.filter((service) =>
+                    formData.servicesId.includes(service.id)
+                )}
+                onChange={handleServiceChange}
+            />
+          </div>
 
-        <div className="mt-4">
-          <h2 className="text-lg mb-2">Status</h2>
-          <select
-            name="status"
-            value={formData.status}
-            onChange={handleChange}
-            className="p-2 border rounded-md w-full"
-          >
-            <option value="">Select Status</option>
-            <option value="confirmed">Confirmed</option>
-            <option value="pending">Pending</option>
-          </select>
-        </div>
+          <div className="mb-4">
+            <label className="block mb-1 font-medium">Select Packages:</label>
+            <Select
+                isMulti
+                options={allPackages}
+                getOptionLabel={(option) => option.label}
+                getOptionValue={(option) => option.id}
+                value={allPackages.filter((pkg) =>
+                    formData.packagesId.includes(pkg.id)
+                )}
+                onChange={handlePackageChange}
+            />
+          </div>
 
-        {/* Services Selection */}
-        <div className="mt-4">
-          <h2 className="text-lg mb-2">Services</h2>
-          <Select
-            isMulti
-            options={allServices}
-            value={selectedServices} // Pre-select services
-            onChange={handleServiceChange}
-            placeholder="Search and select services"
-            className="basic-multi-select"
-            classNamePrefix="select"
-          />
-        </div>
-
-        {/* Packages Selection */}
-        <div className="mt-4">
-          <h2 className="text-lg mb-2">Packages</h2>
-          <Select
-            isMulti
-            options={allPackages}
-            value={selectedPackages} // Pre-select packages
-            onChange={handlePackageChange}
-            placeholder="Search and select packages"
-            className="basic-multi-select"
-            classNamePrefix="select"
-          />
-        </div>
-
-        <div className="mt-4 flex justify-between">
-          <button
-            type="submit"
-            className="p-2 bg-blue-500 text-white rounded-md"
-          >
-            Save Appointment
-          </button>
-          <button
-            type="button"
-            className="p-2 bg-red-500 text-white rounded-md"
-            onClick={onCancel}
-          >
-            Cancel
-          </button>
-        </div>
-      </form>
-    </div>
+          <div className="mt-4 flex justify-between">
+            <button
+                type="submit"
+                className="p-2 bg-blue-500 text-white rounded-md"
+            >
+              Save Appointment
+            </button>
+            <button
+                type="button"
+                className="p-2 bg-red-500 text-white rounded-md"
+                onClick={onCancel}
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
   );
 };
 

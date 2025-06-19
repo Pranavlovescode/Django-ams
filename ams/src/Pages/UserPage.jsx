@@ -3,10 +3,11 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
 const UserPage = () => {
+  const token = localStorage.getItem("token");
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    full_name: "",
-    mobile_phone: "",
+    name: "",
+    mobileNumber: "",
     email: "",
   });
 
@@ -21,7 +22,11 @@ const UserPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post("http://localhost:5000/api/add-user", formData);
+      await axios.post(`${import.meta.env.VITE_URL}/api/user-customer/register`, formData,{
+        headers:{
+          "Authorization":`Bearer ${token}`
+        }
+      });
       console.log("User added successfully");
       navigate("/users");
     } catch (error) {
@@ -38,8 +43,8 @@ const UserPage = () => {
             <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
             <input
               type="text"
-              name="full_name"
-              value={formData.full_name}
+              name="name"
+              value={formData.name}
               onChange={handleChange}
               placeholder="Full Name"
               className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -50,8 +55,8 @@ const UserPage = () => {
             <label className="block text-sm font-medium text-gray-700 mb-1">Mobile Phone</label>
             <input
               type="tel"
-              name="mobile_phone"
-              value={formData.mobile_phone}
+              name="mobileNumber"
+              value={formData.mobileNumber}
               onChange={handleChange}
               placeholder="Mobile Phone"
               className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"

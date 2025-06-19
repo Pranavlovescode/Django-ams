@@ -44,7 +44,7 @@ function App() {
         className={
           noSidebarRoutes.includes(location.pathname)
             ? ""
-            : "lg:ml-72 p-5 mt-14"
+            : "lg:ml-72 mt-14"
         }
       >
         <Routes>

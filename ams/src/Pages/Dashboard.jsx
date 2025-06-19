@@ -1,35 +1,52 @@
 import { useState, useEffect } from "react";
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from "recharts";
-import { Calendar, IndianRupee, PlusCircle } from "lucide-react";
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
+import { Calendar, IndianRupee, PlusCircle, Users, TrendingUp, Clock, Star } from "lucide-react";
 import { Button } from "@/Components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
+import { Badge } from "@/Components/ui/badge";
+import { Progress } from "@/Components/ui/progress";
 import { Link } from "react-router-dom";
 import axios from "axios";
 
 // Define colors for pie chart segments
-const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884d8"];
+const COLORS = ["#ec4899", "#8b5cf6", "#06b6d4", "#10b981", "#f59e0b", "#ef4444"];
+
+// Sample weekly data for revenue chart
+const weeklyData = [
+  { day: 'Mon', revenue: 2400, appointments: 8 },
+  { day: 'Tue', revenue: 1398, appointments: 12 },
+  { day: 'Wed', revenue: 9800, appointments: 15 },
+  { day: 'Thu', revenue: 3908, appointments: 10 },
+  { day: 'Fri', revenue: 4800, appointments: 18 },
+  { day: 'Sat', revenue: 3800, appointments: 22 },
+  { day: 'Sun', revenue: 4300, appointments: 16 },
+];
 
 export default function Dashboard() {
   const [outletName, setOutletName] = useState("");
   const [totalAppointments, setTotalAppointments] = useState(0);
   const [todayRevenue, setTodayRevenue] = useState(0);
   const [appointmentStatus, setAppointmentStatus] = useState([]);
-  const [appointments, setAppointments] = useState(0)
+  const [appointments, setAppointments] = useState(0);
+  const [completedAppointments, setCompletedAppointments] = useState(0);
+  const [pendingAppointments, setPendingAppointments] = useState(0);
   useEffect(() => {
     // Get outlet name and ID from local storage
-    const outletData = localStorage.getItem("outlet_name")||{};
-    const outletId = localStorage.getItem("outlet_id")||{};
-    setOutletName(outletData || "Salon Outlet");
+    const outletData = JSON.parse(localStorage.getItem("outlet"))||{};
+    const token = localStorage.getItem("token") || ""
+    setOutletName(outletData.name || "Salon Outlet");
     const today = new Date().toDateString();
     // Fetch today's appointment status breakdown from API
     const fetchAppointmentStatus = async () => {
       try {
-       const response = await axios.get(`http://localhost:5000/api/get-all-appointments-staff-without-filter`, {
-      params: { outlet_id: outletId }  // Pass outlet_id as query param
+       const response = await axios.get(`${import.meta.env.VITE_URL}/api/appointment/get/${outletData.id}`, {
+         headers:{
+           'Authorization':`Token ${token}`
+         }
     });
     // console.log(response)
-        const allAppointments = response.data.service_appointments;
-        console.log(allAppointments)
+        const allAppointments = response.data;
+        console.log(response.data);
         // Get today's date in string format to compare
         
     
@@ -38,10 +55,15 @@ export default function Dashboard() {
           const appointmentDate = new Date(appointment.time).toDateString();
           return appointmentDate === today;
         });
-        
-        // Count total appointments for today
+          // Count total appointments for today
         setTotalAppointments(todayAppointments.length);
-        setAppointments(todayAppointments)
+        setAppointments(todayAppointments);
+        
+        // Count completed and pending appointments
+        const completed = todayAppointments.filter(apt => apt.status === 'completed').length;
+        const pending = todayAppointments.filter(apt => apt.status === 'pending').length;
+        setCompletedAppointments(completed);
+        setPendingAppointments(pending);
     
         // Get status breakdown
         const statusBreakdown = todayAppointments.reduce((acc, appointment) => {
@@ -102,81 +124,188 @@ export default function Dashboard() {
     fetchTodayRevenue();
     fetchAppointmentStatus();
   }, []);
-
   return (
-    <div className="p-6 bg-gray-100 min-h-screen">
-      <h1 className="text-3xl font-bold mb-6">{outletName} </h1>
+    <div
+      className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 p-6 pt-10"
+      style={{ backgroundSize: "cover" }}
+    >
+      {/* Header Section */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-4xl font-bold text-gray-900 mb-2">
+              Welcome back! 👋
+            </h1>
+            <p className="text-lg text-gray-600">
+              {outletName} Dashboard Overview
+            </p>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Badge variant="outline" className="bg-pink-100 text-pink-700 border-pink-200">
+              <Clock className="w-4 h-4 mr-1" />
+              {new Date().toLocaleDateString()}
+            </Badge>
+          </div>
+        </div>
+      </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <Card>
+      {/* Stats Cards */}
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
+        <Card className="bg-white/80 backdrop-blur-sm shadow-lg border-pink-200 hover:shadow-xl transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
+            <CardTitle className="text-sm font-medium text-gray-600">
               Total Appointments Today
             </CardTitle>
+            <Users className="h-5 w-5 text-pink-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalAppointments}</div>
+            <div className="text-3xl font-bold text-gray-900">{totalAppointments}</div>
+            <p className="text-xs text-green-600 mt-1">
+              <TrendingUp className="inline w-3 h-3 mr-1" />
+              +12% from yesterday
+            </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-white/80 backdrop-blur-sm shadow-lg border-purple-200 hover:shadow-xl transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
+            <CardTitle className="text-sm font-medium text-gray-600">
               Today's Revenue
             </CardTitle>
-            <IndianRupee className="h-4 w-4 text-muted-foreground" />
+            <IndianRupee className="h-5 w-5 text-purple-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">Rs.{todayRevenue.toFixed(2)}</div>
+            <div className="text-3xl font-bold text-gray-900">₹{todayRevenue.toFixed(2)}</div>
+            <p className="text-xs text-green-600 mt-1">
+              <TrendingUp className="inline w-3 h-3 mr-1" />
+              +8% from yesterday
+            </p>
           </CardContent>
         </Card>
 
-        <Card className="md:col-span-2 lg:col-span-1">
-          <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
+        <Card className="bg-white/80 backdrop-blur-sm shadow-lg border-indigo-200 hover:shadow-xl transition-shadow">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-gray-600">
+              Completed
+            </CardTitle>
+            <Star className="h-5 w-5 text-indigo-600" />
           </CardHeader>
-          <CardContent className="flex justify-center gap-4">
-            <Link to="/book-appointment">
-              <Button className="w-full">
-                <PlusCircle className="mr-2 h-4 w-4" /> Book Appointment
-              </Button>
-            </Link>
-            {/* <Button variant="outline" className="w-full">
-              <Calendar className="mr-2 h-4 w-4" /> View Calendar
-            </Button> */}
+          <CardContent>
+            <div className="text-3xl font-bold text-gray-900">{completedAppointments}</div>
+            <Progress 
+              value={(completedAppointments / totalAppointments) * 100} 
+              className="mt-2"
+            />
+          </CardContent>
+        </Card>
+
+        <Card className="bg-white/80 backdrop-blur-sm shadow-lg border-orange-200 hover:shadow-xl transition-shadow">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-gray-600">
+              Pending
+            </CardTitle>
+            <Clock className="h-5 w-5 text-orange-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-gray-900">{pendingAppointments}</div>
+            <Progress 
+              value={(pendingAppointments / totalAppointments) * 100} 
+              className="mt-2"
+            />
           </CardContent>
         </Card>
       </div>
 
-      <Card className="mt-6">
+      {/* Charts Section */}
+      <div className="grid gap-6 lg:grid-cols-2 mb-8">
+        <Card className="bg-white/80 backdrop-blur-sm shadow-lg border-pink-200">
+          <CardHeader>
+            <CardTitle className="text-xl font-semibold text-gray-900">
+              Appointment Status Breakdown
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="h-[350px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={appointmentStatus}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  outerRadius={100}
+                  fill="#8884d8"
+                  dataKey="count"
+                  label={({ name, percent }) =>
+                    `${name} ${(percent * 100).toFixed(0)}%`
+                  }
+                >
+                  {appointmentStatus.map((entry, index) => (
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={COLORS[index % COLORS.length]}
+                    />
+                  ))}
+                </Pie>
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-white/80 backdrop-blur-sm shadow-lg border-purple-200">
+          <CardHeader>
+            <CardTitle className="text-xl font-semibold text-gray-900">
+              Weekly Revenue Trend
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="h-[350px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={weeklyData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="day" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="revenue" fill="#ec4899" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Quick Actions Section */}
+      <Card className="bg-white/80 backdrop-blur-sm shadow-lg border-pink-200">
         <CardHeader>
-          <CardTitle>Appointment Status Breakdown</CardTitle>
+          <CardTitle className="text-xl font-semibold text-gray-900">
+            Quick Actions
+          </CardTitle>
         </CardHeader>
-        <CardContent className="h-[300px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={appointmentStatus}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                outerRadius={80}
-                fill="#8884d8"
-                dataKey="count"
-                label={({ name, percent }) =>
-                  `${name} ${(percent * 100).toFixed(0)}%`
-                }
-              >
-                {appointmentStatus.map((entry, index) => (
-                  <Cell
-                    key={`cell-${index}`}
-                    fill={COLORS[index % COLORS.length]}
-                  />
-                ))}
-              </Pie>
-              <Legend />
-            </PieChart>
-          </ResponsiveContainer>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <Link to="/book-appointment">
+              <Button className="w-full bg-pink-600 hover:bg-pink-700 text-white h-12">
+                <PlusCircle className="mr-2 h-5 w-5" />
+                Book Appointment
+              </Button>
+            </Link>
+            <Link to="/appointments">
+              <Button variant="outline" className="w-full border-purple-200 hover:bg-purple-50 h-12">
+                <Calendar className="mr-2 h-5 w-5" />
+                View Appointments
+              </Button>
+            </Link>
+            <Link to="/services">
+              <Button variant="outline" className="w-full border-indigo-200 hover:bg-indigo-50 h-12">
+                <Star className="mr-2 h-5 w-5" />
+                Manage Services
+              </Button>
+            </Link>
+            <Link to="/reports">
+              <Button variant="outline" className="w-full border-orange-200 hover:bg-orange-50 h-12">
+                <TrendingUp className="mr-2 h-5 w-5" />
+                View Reports
+              </Button>
+            </Link>
+          </div>
         </CardContent>
       </Card>
     </div>

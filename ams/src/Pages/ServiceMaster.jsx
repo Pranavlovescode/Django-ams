@@ -9,20 +9,17 @@ import { jwtDecode } from 'jwt-decode';
 
 const ServiceMaster = () => {
   const [services, setServices] = useState([]);
-  const [token, setToken] = useState({
-    token: "",
-    user_data: {}
-  });
+  const token = localStorage.getItem("token")
+  const outletId = JSON.parse(localStorage.getItem("outlet"))?.id
   // const [services, setServices] = useState(services);
   // const handleDelete = (id) => {
   // const updatedServices = services.filter(service => service.id !== id);
   // setServices(updatedServices);
   //   };
   useEffect(() => {
-    setToken(JSON.parse(localStorage.getItem("auth_data")));
-    console.log(token.token);
+    console.log(token);
     try {
-      const decoded = jwtDecode(token.token)
+      const decoded = jwtDecode(token)
       const currentTime = Date.now() / 1000;
       if (decoded.exp < currentTime) {
         localStorage.removeItem("auth_data");
@@ -35,8 +32,16 @@ const ServiceMaster = () => {
   useEffect(() => {
     const fetchServices = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/services');
-        console.log(response.data)
+        const response = await axios.get(`${import.meta.env.VITE_URL}/api/services/get/all`,{
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          params:{
+            outletId:outletId
+          }
+          
+        });
+        console.log("fetched services",response.data)
         setServices(response.data);
       } catch (error) {
         console.error("There was an error fetching services!", error);
@@ -49,8 +54,12 @@ const ServiceMaster = () => {
     // Delete service
     const handleDelete = async (id) => {
       try {
-        await axios.delete(`http://localhost:5000/api/services/${id}`);
-        setServices(services.filter(service => service._id !== id));
+        await axios.delete(`${import.meta.env.VITE_URL}/api/services/delete/${id}`,{
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        setServices(services.filter(service => service.id !== id));
       } catch (error) {
         console.error('Error deleting service:', error);
       }
@@ -74,18 +83,18 @@ const ServiceMaster = () => {
               <tbody>
               {services.map((service) => (
                   <tr key={service._id} className="hover:bg-gray-50">
-                    <td className="px-4 py-2 border-b text-center">{service.service_name}</td>
+                    <td className="px-4 py-2 border-b text-center">{service.name}</td>
                     <td className="px-4 py-2 border-b text-center">{service.price}</td>
-                    <td className="px-4 py-2 border-b text-center">{service.estimated_time} mins</td>
+                    <td className="px-4 py-2 border-b text-center">{service.duration} mins</td>
                     <td className="px-4 py-2 border-b text-center flex justify-center items-center">
                       <button
                         className="px-3 py-1 ml-2 w-20"
-                        onClick={() => handleDelete(service._id)}
+                        onClick={() => handleDelete(service.id)}
                       >
                         🗑️
                       </button>
                       <Link
-                        to={`/edit-service/${service._id}`}
+                        to={`/edit-service/${service.id}`}
                         className="px-3 py-1 rounded m-1 w-20"
                       >
                         <img src={edit} alt="edit" />

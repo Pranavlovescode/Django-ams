@@ -66,9 +66,9 @@ const BookAppointmentPage = () => {
     try {
       console.log(formData); // Add this line to check the data being sent
 
-      const response = await axios.post("http://localhost:5000/api/add-appointment-staff", formData, {
+      const response = await axios.post(`${import.meta.env.VITE_URL}/api/appointment/create`, formData, {
         headers: {
-          Authorization: `Bearer ${token.token}`,
+          Authorization: `Bearer ${token}`,
         },
       });
       console.log("New appointment:", response.data);
@@ -78,21 +78,18 @@ const BookAppointmentPage = () => {
     }
   };
 
-  const [token, setToken] = useState({
-    token: "",
-    user_data: {}
-  });
+  const [token, setToken] = useState("");
 
   useEffect(() => {
-    const authData = JSON.parse(localStorage.getItem("auth_data"));
-    if (authData) {
-      setToken(authData);
+    const getToken =localStorage.getItem("token");
+    if (getToken) {
+      setToken(getToken);
       try {
-        const decoded = jwtDecode(authData.token);
+        const decoded = jwtDecode(token);
         const currentTime = Date.now() / 1000;
         if (decoded.exp < currentTime) {
           localStorage.removeItem("auth_data");
-          setToken({ token: "", user_data: {} });
+          setToken(getToken);
         }
       } catch (error) {
         console.log(error);

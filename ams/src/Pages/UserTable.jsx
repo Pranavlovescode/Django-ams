@@ -4,12 +4,20 @@ import { Link } from 'react-router-dom';
 
 const UserTable = () => {
   const [users, setUsers] = useState([]);
+  const token = localStorage.getItem("token");
 
   // Fetch all users when the component mounts
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const response = await axios.get("http://localhost:5000/api/get-users");
+        const response = await axios.get(`${import.meta.env.VITE_URL}/api/user/role-type`,{
+            headers:{
+                "Authorization":`Bearer ${token}`
+            },
+            params:{
+                "role_type":"CUSTOMER"
+            }
+        });
         console.log(response.data);
         setUsers(response.data);
       } catch (error) {
@@ -35,9 +43,9 @@ const UserTable = () => {
           </thead>
           <tbody>
             {users.map((user) => (
-              <tr key={user._id} className="hover:bg-gray-50">
-                <td className="px-4 py-2 border-b text-center">{user.full_name}</td>
-                <td className="px-4 py-2 border-b text-center">{user.mobile_phone}</td>
+              <tr key={user.id} className="hover:bg-gray-50">
+                <td className="px-4 py-2 border-b text-center">{user.name}</td>
+                <td className="px-4 py-2 border-b text-center">{user.mobileNumber}</td>
                 <td className="px-4 py-2 border-b text-center">{user.email || "N/A"}</td>
               </tr>
             ))}
