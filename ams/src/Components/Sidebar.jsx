@@ -87,7 +87,7 @@ function Sidebar() {
                   ></path>
                 </svg>
               </Button>
-              <a href={`${import.meta.env.VITE_URL}`} className="flex px-2">
+              <a href={`/`} className="flex px-2">
                 <img src={newlogo} alt="logo" className="w-14 h-14 object-contain" />
               </a>
             </div>

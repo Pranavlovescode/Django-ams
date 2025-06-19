@@ -11,6 +11,9 @@ import {
   CardDescription,
   CardContent,
 } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Calendar, Clock, CheckCircle } from "lucide-react";
 
 const AppointmentPage = () => {
   const token = localStorage.getItem("token");
@@ -45,47 +48,81 @@ const AppointmentPage = () => {
       console.error("Error fetching appointments:", error);
     }
   };
-
-  // useEffect(() => {
-  //   const authData = localStorage.getItem("token");
-  //   if (authData) {
-  //     try {
-  //       const decoded = jwtDecode(authData.token);
-  //       const currentTime = Date.now() / 1000;
-  //       if (decoded.exp < currentTime) {
-  //         localStorage.removeItem("auth_data");
-  //       }
-  //     } catch (error) {
-  //       console.log(error);
-  //     }
-  //   }
-  //   fetchAppointments();
-  // }, []);
-
+  useEffect(() => {
+    fetchAppointments();
+  }, []);
   return (
     <>
       {token ? (
         <div
-          className="flex min-h-screen items-center justify-center bg-gradient-to-r from-pink-300 via-purple-300 to-indigo-300 p-4"
+          className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 p-6 pt-10"
           style={{ backgroundSize: "cover" }}
         >
-          <Card className="w-full max-w-6xl bg-white/80 shadow-xl">
-            <CardHeader>
-              <CardTitle className="text-center text-2xl font-bold">
-                Appointment Management
-              </CardTitle>
-              <CardDescription className="text-center text-sm text-gray-500">
-                Manage your appointments efficiently
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                <Appointments
-                  appointments={appointments}
-                  onRefresh={fetchAppointments}
-                />
-                <ConfirmedAppointments confirmappointments={Confirmed} />
+          {/* Header Section */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-4xl font-bold text-gray-900 mb-2">
+                  Appointment Management 📅
+                </h1>
+                <p className="text-lg text-gray-600">
+                  Manage and track your salon appointments
+                </p>
               </div>
+              <div className="flex items-center space-x-4">
+                <Badge variant="outline" className="bg-pink-100 text-pink-700 border-pink-200">
+                  <Clock className="w-4 h-4 mr-1" />
+                  Pending: {appointments.length}
+                </Badge>
+                <Badge variant="outline" className="bg-green-100 text-green-700 border-green-200">
+                  <CheckCircle className="w-4 h-4 mr-1" />
+                  Confirmed: {Confirmed.length}
+                </Badge>
+              </div>
+            </div>
+          </div>
+
+          {/* Tabs for Appointment Views */}
+          <Card className="bg-white/90 backdrop-blur-sm shadow-xl border-pink-200">
+            <CardContent className="p-0">
+              <Tabs defaultValue="pending" className="w-full">
+                <div className="border-b border-pink-100 bg-gradient-to-r from-pink-50 to-purple-50">
+                  <TabsList className="grid w-full grid-cols-2 bg-transparent">
+                    <TabsTrigger 
+                      value="pending" 
+                      className="data-[state=active]:bg-pink-100 data-[state=active]:text-pink-700 flex items-center gap-2"
+                    >
+                      <Clock className="w-4 h-4" />
+                      Pending Appointments ({appointments.length})
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="confirmed" 
+                      className="data-[state=active]:bg-green-100 data-[state=active]:text-green-700 flex items-center gap-2"
+                    >
+                      <CheckCircle className="w-4 h-4" />
+                      Confirmed Appointments ({Confirmed.length})
+                    </TabsTrigger>
+                  </TabsList>
+                </div>
+                
+                <TabsContent value="pending" className="m-0">
+                  <div className="p-6">
+                    <Appointments
+                      appointments={appointments}
+                      onRefresh={fetchAppointments}
+                    />
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="confirmed" className="m-0">
+                  <div className="p-6">
+                    <ConfirmedAppointments 
+                      confirmappointments={Confirmed}
+                      onRefresh={fetchAppointments}
+                    />
+                  </div>
+                </TabsContent>
+              </Tabs>
             </CardContent>
           </Card>
         </div>

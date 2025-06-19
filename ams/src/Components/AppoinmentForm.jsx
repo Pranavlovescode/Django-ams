@@ -3,6 +3,17 @@ import axios from "axios";
 import Select from "react-select";
 import AsyncSelect from "react-select/async";
 import { useNavigate } from "react-router-dom";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { CalendarDays, Phone, Package, Scissors, Plus, Save, X } from "lucide-react";
 
 const AppointmentForm = ({ appointment, onSave, onCancel }) => {
   const [formData, setFormData] = useState({
@@ -165,16 +176,18 @@ const AppointmentForm = ({ appointment, onSave, onCancel }) => {
   const handleAddUser = () => {
     navigate("/add-user");
   };
-
   // Custom "No Options" message with Add User button
   const noOptionsMessage = () => (
-      <button
-          type="button"
-          className="p-2 bg-green-500 text-white rounded-md w-full text-center"
-          onClick={handleAddUser}
+    <div className="p-3 text-center">
+      <Button
+        type="button"
+        className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-medium rounded-md w-full flex items-center justify-center gap-2"
+        onClick={handleAddUser}
       >
+        <Plus className="w-4 h-4" />
         Add New User
-      </button>
+      </Button>
+    </div>
   );
 
   const handleSubmit = (e) => {
@@ -189,87 +202,163 @@ const AppointmentForm = ({ appointment, onSave, onCancel }) => {
   const selectedPackages = allPackages.filter((pkg) =>
       formData.packagesId.includes(pkg.id)
   );
+  // Custom styles for react-select components
+  const customSelectStyles = {
+    control: (provided, state) => ({
+      ...provided,
+      minHeight: '48px',
+      border: '2px solid #f9a8d4',
+      borderRadius: '8px',
+      boxShadow: 'none',
+      '&:hover': {
+        borderColor: '#ec4899',
+      },
+      borderColor: state.isFocused ? '#ec4899' : '#f9a8d4',
+    }),
+    multiValue: (provided) => ({
+      ...provided,
+      backgroundColor: '#fce7f3',
+      borderRadius: '6px',
+    }),
+    multiValueLabel: (provided) => ({
+      ...provided,
+      color: '#be185d',
+      fontWeight: '500',
+    }),
+    multiValueRemove: (provided) => ({
+      ...provided,
+      color: '#be185d',
+      '&:hover': {
+        backgroundColor: '#ec4899',
+        color: 'white',
+      },
+    }),
+    placeholder: (provided) => ({
+      ...provided,
+      color: '#9ca3af',
+    }),
+  };
 
   return (
-      <div className="p-4">
-        <h1 className="text-xl mb-4">Appointment Form</h1>
-        <form onSubmit={handleSubmit}>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="relative">
-              <AsyncSelect
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 p-6 pt-10 flex items-center justify-center">
+      <Card className="w-full max-w-4xl bg-white/90 backdrop-blur-sm shadow-2xl border-0">
+        <CardHeader className="text-center space-y-4">
+          <div className="mx-auto w-16 h-16 bg-gradient-to-br from-pink-500 to-purple-600 rounded-full flex items-center justify-center">
+            <CalendarDays className="w-8 h-8 text-white" />
+          </div>
+          <CardTitle className="text-3xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
+            {appointment ? 'Edit Appointment' : 'Book New Appointment'}
+          </CardTitle>
+          <CardDescription className="text-gray-600 text-lg">
+            {appointment ? 'Update appointment details below' : 'Schedule a new appointment for your customer'}
+          </CardDescription>
+        </CardHeader>
+        
+        <CardContent className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                  <Phone className="w-4 h-4 text-pink-600" />
+                  Customer Mobile Number
+                </Label>
+                <AsyncSelect
                   cacheOptions
                   loadOptions={fetchMobileNumbers}
                   onChange={handleMobileChange}
-                  placeholder="Customer Mobile Phone"
+                  placeholder="Search by mobile number..."
                   isClearable
                   defaultOptions={false}
                   noOptionsMessage={noOptionsMessage}
+                  styles={customSelectStyles}
                   value={
                     formData.customer_mobile_phone
-                        ? {
+                      ? {
                           label: formData.customer_mobile_phone,
                           value: formData.customer_mobile_phone,
                         }
-                        : null
+                      : null
                   }
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="appointmentTime" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                  <CalendarDays className="w-4 h-4 text-pink-600" />
+                  Appointment Date & Time
+                </Label>
+                <Input
+                  id="appointmentTime"
+                  type="datetime-local"
+                  name="appointmentTime"
+                  value={formData.appointmentTime}
+                  onChange={handleChange}
+                  className="h-12 border-2 border-pink-200 focus:border-pink-500 focus:ring-pink-500"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                <Scissors className="w-4 h-4 text-pink-600" />
+                Select Services
+              </Label>
+              <Select
+                isMulti
+                options={allServices}
+                getOptionLabel={(option) => `${option.label} - ₹${option.service_price}`}
+                getOptionValue={(option) => option.id}
+                value={allServices.filter((service) =>
+                  formData.servicesId.includes(service.id)
+                )}
+                onChange={handleServiceChange}
+                placeholder="Choose services..."
+                styles={customSelectStyles}
               />
             </div>
 
-            <input
-                type="datetime-local"
-                name="appointmentTime"
-                value={formData.appointmentTime}
-                onChange={handleChange}
-                className="p-2 border rounded-md"
-                required
-            />
-          </div>
-
-          <div className="mb-4">
-            <label className="block mb-1 font-medium">Select Services:</label>
-            <Select
-                isMulti
-                options={allServices}
-                getOptionLabel={(option) => option.label}
-                getOptionValue={(option) => option.id}
-                value={allServices.filter((service) =>
-                    formData.servicesId.includes(service.id)
-                )}
-                onChange={handleServiceChange}
-            />
-          </div>
-
-          <div className="mb-4">
-            <label className="block mb-1 font-medium">Select Packages:</label>
-            <Select
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                <Package className="w-4 h-4 text-pink-600" />
+                Select Packages
+              </Label>
+              <Select
                 isMulti
                 options={allPackages}
-                getOptionLabel={(option) => option.label}
+                getOptionLabel={(option) => `${option.label} - ₹${option.pkg_price}`}
                 getOptionValue={(option) => option.id}
                 value={allPackages.filter((pkg) =>
-                    formData.packagesId.includes(pkg.id)
+                  formData.packagesId.includes(pkg.id)
                 )}
                 onChange={handlePackageChange}
-            />
-          </div>
+                placeholder="Choose packages..."
+                styles={customSelectStyles}
+              />
+            </div>
 
-          <div className="mt-4 flex justify-between">
-            <button
+            <div className="flex flex-col sm:flex-row gap-4 pt-4">
+              <Button 
                 type="submit"
-                className="p-2 bg-blue-500 text-white rounded-md"
-            >
-              Save Appointment
-            </button>
-            <button
+                className="flex-1 h-12 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white font-semibold text-lg shadow-lg transition-all duration-200 transform hover:scale-[1.02]"
+              >
+                <Save className="w-5 h-5 mr-2" />
+                {appointment ? 'Update Appointment' : 'Save Appointment'}
+              </Button>
+              <Button 
                 type="button"
-                className="p-2 bg-red-500 text-white rounded-md"
+                variant="outline"
                 onClick={onCancel}
-            >
-              Cancel
-            </button>
-          </div>
-        </form>
-      </div>
+                className="flex-1 h-12 border-2 border-gray-300 hover:border-gray-400 text-gray-700 font-semibold text-lg transition-all duration-200"
+              >
+                <X className="w-5 h-5 mr-2" />
+                Cancel
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 

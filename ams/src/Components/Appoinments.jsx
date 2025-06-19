@@ -128,122 +128,114 @@ const Appointments = ({ appointments, onRefresh }) => {
     filter,
     selectedTimeSlot
   );
-
   return (
-    <div
-      className="flex min-h-screen items-center justify-center bg-gradient-to-r from-pink-300 via-purple-300 to-indigo-300 p-4"
-      style={{ backgroundSize: "cover" }}
-    >
-      <Card className="w-full max-w-6xl bg-white/80 shadow-xl">
-        <CardHeader>
-          <CardTitle className="text-center text-3xl font-bold text-pink-700">
-            Appointments
-          </CardTitle>
-          <CardDescription className="text-center">
-            Manage your salon appointments effortlessly
-          </CardDescription>
-        </CardHeader>
+    <div>
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between mb-6">
+        <div className="flex flex-col gap-2">
+          <label className="text-sm font-semibold text-pink-700">Sort by:</label>
+          <Select value={filter} onValueChange={setFilter}>
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="Select Range" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Today">Today</SelectItem>
+              <SelectItem value="Last Week">Last Week</SelectItem>
+              <SelectItem value="Last Month">Last Month</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
 
-        <CardContent>
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex flex-col gap-2">
-              <label className="text-sm font-semibold text-pink-700">Sort by:</label>
-              <Select value={filter} onValueChange={setFilter}>
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder="Select Range" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Today">Today</SelectItem>
-                  <SelectItem value="Last Week">Last Week</SelectItem>
-                  <SelectItem value="Last Month">Last Month</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+        <div className="flex flex-col gap-2">
+          <label className="text-sm font-semibold text-pink-700">
+            Time Slot:
+          </label>
+          <Select
+            value={selectedTimeSlot ? selectedTimeSlot.label : ""}
+            onValueChange={(val) => {
+              const selectedOption = timeSlots.find((slot) => slot.label === val);
+              setSelectedTimeSlot(selectedOption);
+            }}
+          >
+            <SelectTrigger className="w-52">
+              <SelectValue placeholder="Select Time Slot" />
+            </SelectTrigger>
+            <SelectContent>
+              {timeSlots.map((slot, index) => (
+                <SelectItem key={index} value={slot.label}>
+                  {slot.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
 
-            <div className="flex flex-col gap-2">
-              <label className="text-sm font-semibold text-pink-700">
-                Time Slot:
-              </label>
-              <Select
-                value={selectedTimeSlot ? selectedTimeSlot.label : ""}
-                onValueChange={(val) => {
-                  const selectedOption = timeSlots.find((slot) => slot.label === val);
-                  setSelectedTimeSlot(selectedOption);
-                }}
-              >
-                <SelectTrigger className="w-52">
-                  <SelectValue placeholder="Select Time Slot" />
-                </SelectTrigger>
-                <SelectContent>
-                  {timeSlots.map((slot, index) => (
-                    <SelectItem key={index} value={slot.label}>
-                      {slot.label}
-                    </SelectItem>
+      <div className="overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-pink-50">
+              <TableHead className="text-center">Name</TableHead>
+              <TableHead className="text-center">Services</TableHead>
+              <TableHead className="text-center">Packages</TableHead>
+              <TableHead className="text-center">Time</TableHead>
+              <TableHead className="text-center">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredAppointments.map((appointment) => (
+              <TableRow key={appointment.id} className="hover:bg-pink-50">
+                <TableCell className="text-center">
+                  {appointment.user.name}
+                </TableCell>
+                <TableCell className="text-center">
+                  {appointment.services.map((service, idx) => (
+                    <div key={idx}>{service.name}</div>
                   ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="mt-4 overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-pink-50">
-                  <TableHead className="text-center">Name</TableHead>
-                  <TableHead className="text-center">Services</TableHead>
-                  <TableHead className="text-center">Packages</TableHead>
-                  <TableHead className="text-center">Time</TableHead>
-                  <TableHead className="text-center">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredAppointments.map((appointment) => (
-                  <TableRow key={appointment.id} className="hover:bg-pink-50">
-                    <TableCell className="text-center">
-                      {appointment.user.name}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      {appointment.services.map((service, idx) => (
-                        <div key={idx}>{service.name}</div>
-                      ))}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      {appointment.packages.map((pkg, idx) => (
-                        <div key={idx}>{pkg.name}</div>
-                      ))}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      {new Date(appointment.appointment_time).toLocaleString()}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <div className="flex justify-center gap-2">
-                        <Link
-                          to={`/edit-appointment/${appointment.id}`}
-                          className="text-blue-500 hover:underline"
-                        >
-                          <img src={edit} alt="Edit" className="h-5 w-5" />
-                        </Link>
-                        <Button
-                          variant="destructive"
-                          onClick={() => handleDelete(appointment.id)}
-                        >
-                          Delete
-                        </Button>
-                        <Button
-                          variant="default"
-                          onClick={() => handleConfirm(appointment.id)}
-                        >
-                          Confirm
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
+                </TableCell>
+                <TableCell className="text-center">
+                  {appointment.packages.map((pkg, idx) => (
+                    <div key={idx}>{pkg.name}</div>
+                  ))}
+                </TableCell>
+                <TableCell className="text-center">
+                  {new Date(appointment.appointment_time).toLocaleString()}
+                </TableCell>
+                <TableCell className="text-center">
+                  <div className="flex justify-center gap-2">
+                    <Button
+                      variant="default"
+                      className="bg-green-600 text-white hover:bg-green-500"
+                      onClick={() => handleConfirm(appointment.id)}
+                    >
+                      Confirm
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      onClick={() => handleDelete(appointment.id)}
+                    >
+                      Cancel
+                    </Button>
+                    <Link
+                      to={`/edit-appointment/${appointment.id}`}
+                      state={{
+                        appointment: {
+                          ...appointment,
+                          services: appointment.service,
+                          packages: appointment.package,
+                          time: appointment.appointment_time,
+                        },
+                      }}
+                      className="text-blue-500 hover:underline"
+                    >
+                      <img src={edit} alt="Edit" className="h-5 w-5" />
+                    </Link>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 };
