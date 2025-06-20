@@ -55,26 +55,35 @@ const AppointmentPage = () => {
     <>
       {token ? (
         <div
-          className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 p-6 pt-10"
+          className="min-h-screen bg-gradient-to-br from-pink-300 via-purple-300 to-indigo-300 p-6 pt-10"
           style={{ backgroundSize: "cover" }}
         >
           {/* Header Section */}
           <div className="mb-8">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-4xl font-bold text-gray-900 mb-2">
-                  Appointment Management 📅
-                </h1>
+                <span className="flex items-center space-x-2">
+                  <h1 className="text-4xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 text-transparent bg-clip-text pb-4">
+                    Appointment Management
+                  </h1>
+                  <h1 className="text-4xl">📅</h1>
+                </span>
                 <p className="text-lg text-gray-600">
                   Manage and track your salon appointments
                 </p>
               </div>
               <div className="flex items-center space-x-4">
-                <Badge variant="outline" className="bg-pink-100 text-pink-700 border-pink-200">
+                <Badge
+                  variant="outline"
+                  className="bg-pink-100 text-pink-700 border-pink-200"
+                >
                   <Clock className="w-4 h-4 mr-1" />
                   Pending: {appointments.length}
                 </Badge>
-                <Badge variant="outline" className="bg-green-100 text-green-700 border-green-200">
+                <Badge
+                  variant="outline"
+                  className="bg-green-100 text-green-700 border-green-200"
+                >
                   <CheckCircle className="w-4 h-4 mr-1" />
                   Confirmed: {Confirmed.length}
                 </Badge>
@@ -88,15 +97,15 @@ const AppointmentPage = () => {
               <Tabs defaultValue="pending" className="w-full">
                 <div className="border-b border-pink-100 bg-gradient-to-r from-pink-50 to-purple-50">
                   <TabsList className="grid w-full grid-cols-2 bg-transparent">
-                    <TabsTrigger 
-                      value="pending" 
+                    <TabsTrigger
+                      value="pending"
                       className="data-[state=active]:bg-pink-100 data-[state=active]:text-pink-700 flex items-center gap-2"
                     >
                       <Clock className="w-4 h-4" />
                       Pending Appointments ({appointments.length})
                     </TabsTrigger>
-                    <TabsTrigger 
-                      value="confirmed" 
+                    <TabsTrigger
+                      value="confirmed"
                       className="data-[state=active]:bg-green-100 data-[state=active]:text-green-700 flex items-center gap-2"
                     >
                       <CheckCircle className="w-4 h-4" />
@@ -104,7 +113,7 @@ const AppointmentPage = () => {
                     </TabsTrigger>
                   </TabsList>
                 </div>
-                
+
                 <TabsContent value="pending" className="m-0">
                   <div className="p-6">
                     <Appointments
@@ -113,10 +122,10 @@ const AppointmentPage = () => {
                     />
                   </div>
                 </TabsContent>
-                
+
                 <TabsContent value="confirmed" className="m-0">
                   <div className="p-6">
-                    <ConfirmedAppointments 
+                    <ConfirmedAppointments
                       confirmappointments={Confirmed}
                       onRefresh={fetchAppointments}
                     />

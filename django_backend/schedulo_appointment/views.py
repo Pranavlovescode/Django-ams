@@ -232,27 +232,38 @@ def outlets(request):
 @permission_classes([IsAuthenticated])
 def services_function(request):
     outlet_id = request.query_params.get('outlet_id')
+    service_id = request.query_params.get('service_id')
     if request.method == "GET":
         try:
-            if outlet_id:
-                # Filter by outlet_id and is_active=True
+            if service_id:
+                try:
+                    one_service = Service.objects.get(service_id=service_id)
+                    serializer = ServiceSerializer(one_service)
+                    return Response({
+                        'message': "Service fetched successfully",
+                        "service": serializer.data
+                    }, status=status.HTTP_200_OK)
+                except Service.DoesNotExist:
+                    return Response({
+                        'message': "Service not found"
+                    }, status=status.HTTP_404_NOT_FOUND)
+
+            elif outlet_id:
                 services = Service.objects.filter(outlets__outlet_id=outlet_id, is_active=True).distinct()
             else:
-                # Get only active services if no outlet specified
                 services = Service.objects.filter(is_active=True)
-            
-            # When querying multiple objects, use many=True
-            serializer = ServiceSerializer(services, many=True)
 
+            serializer = ServiceSerializer(services, many=True)
             return Response({
-                'message': "Services fetched for given outlet successfully",
+                'message': "Services fetched successfully",
                 "services": serializer.data
             }, status=status.HTTP_200_OK)
-        
+
         except Exception as e:
             return Response({
                 'message': f"Error fetching services: {str(e)}"
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
         
     if request.method == "POST":
         try:
@@ -273,12 +284,25 @@ def services_function(request):
                 category=category,
                 is_active=True
             )
-            
+            outlets = []
             # Then add the outlet to the many-to-many relationship
-            outlet = Outlet.objects.get(outlet_id=outlet_id)
-            service_data.outlets.add(outlet)
-
+            if not request.data.get('outlets', []):
+                return Response({
+                    'message': "Outlet ID is required to associate the service"
+                }, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                try:
+                    for outlet_id in request.data.get('outlets', []):
+                        outlet = Outlet.objects.get(outlet_id=outlet_id)
+                        outlets.append(outlet)
+                except Outlet.DoesNotExist:
+                    return Response({
+                        'message': f"Outlet with ID {outlet_id} not found"
+                    }, status=status.HTTP_404_NOT_FOUND)
+            
             serializer_service = ServiceSerializer(service_data)
+            # Associate the service with the outlets
+            service_data.outlets.set(outlets)
 
             return Response({
                 'message': "Service saved successfully",
@@ -298,9 +322,10 @@ def services_function(request):
 @api_view(["GET","POST"])
 @permission_classes([IsAuthenticated])
 def package_function(request):
+    outlet_id = request.query_params.get('outlet_id')
     if request.method == "GET":
         try:
-            packages = Package.objects.filter(outlets__outlet_id=request.data.get('outlet_id')).distinct()
+            packages = Package.objects.filter(outlets__outlet_id=outlet_id).distinct()
             serializer = PackageSerializer(packages, many=True)
             return Response({
                 'message': "Packages fetched successfully",

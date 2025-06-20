@@ -240,8 +240,8 @@ const AppointmentForm = ({ appointment, onSave, onCancel }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 p-6 pt-10 flex items-center justify-center">
-      <Card className="w-full max-w-4xl bg-white/90 backdrop-blur-sm shadow-2xl border-0">
+    <div className="min-h-screen bg-gradient-to-br from-pink-300 via-purple-300 to-indigo-300 p-6 pt-10 flex items-center justify-center">
+      <Card className="w-full max-w-4xl bg-white/70 backdrop-blur-sm shadow-2xl border-0">
         <CardHeader className="text-center space-y-4">
           <div className="mx-auto w-16 h-16 bg-gradient-to-br from-pink-500 to-purple-600 rounded-full flex items-center justify-center">
             <CalendarDays className="w-8 h-8 text-white" />
