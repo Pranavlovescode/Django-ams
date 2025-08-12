@@ -1,21 +1,21 @@
-import { Button } from "@/Components/ui/button";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/Components/ui/card";
+} from "@/components/ui/card";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/Components/ui/select";
+} from "@/components/ui/select";
 
-import { Input } from "@/Components/ui/input";
-import { Label } from "@/Components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 // import { statesAndDistricts } from "@/Data/list";
 import { useEffect, useState } from "react";
 import { SelectGroup, SelectLabel } from "@radix-ui/react-select";

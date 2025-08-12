@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import edit from "../assets/edit _button.svg";
-import LogoutWarning from "@/Components/LogoutWarning";
+import LogoutWarning from "@/components/LogoutWarning";
 import { jwtDecode } from "jwt-decode";
 import {
   Card,

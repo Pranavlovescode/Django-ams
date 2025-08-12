@@ -4,7 +4,7 @@ import { services } from '../Data/service';
 import edit from "../assets/edit _button.svg";  // Your edit icon
 import axios from 'axios'; // Axios to handle API calls
 import { useState, useEffect } from 'react';
-import LogoutWarning from '@/Components/LogoutWarning';
+import LogoutWarning from '@/components/LogoutWarning';
 import { jwtDecode } from 'jwt-decode';
 import {
   Card,

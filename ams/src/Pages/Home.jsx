@@ -1,5 +1,5 @@
 import React from "react";
-import Sidebar from "../Components/Sidebar";
+import Sidebar from "../components/Sidebar";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Login from "../Pages/Login";
 import Signup from "../Pages/Signup";
@@ -8,7 +8,7 @@ import AppointmentPage from "../Pages/AppoinmentPage";
 import EditAppointmentPage from "../Pages/EditAppoinmentPage";
 import BookAppointmentPage from "../Pages/BookAppoinmentPage";
 import PaymentPage from "./PaymentPage";
-import PaymentForm from "../Components/PaymentForm";
+import PaymentForm from "../components/PaymentForm";
 
 function Home() {
   return (

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import Appointments from "../Components/Appoinments";
+import Appointments from "../components/Appoinments";
 import ConfirmedAppointments from "../Pages/ConfirmedAppointments";
-import LogoutWarning from "@/Components/LogoutWarning";
+import LogoutWarning from "@/components/LogoutWarning";
 import { jwtDecode } from "jwt-decode";
 import {
   Card,

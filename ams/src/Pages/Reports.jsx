@@ -8,7 +8,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/Components/ui/card";
+} from "@/components/ui/card";
 import { ChartContainer } from "@mui/x-charts/ChartContainer";
 import { BarChart } from "@mui/x-charts/BarChart";
 import axios from "axios";

@@ -1,9 +1,9 @@
 
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import AppointmentForm from "../Components/AppoinmentForm";
+import AppointmentForm from "../components/AppoinmentForm";
 import axios from "axios";
-import LogoutWarning from "@/Components/LogoutWarning";
+import LogoutWarning from "@/components/LogoutWarning";
 import { jwtDecode } from "jwt-decode";
 
 const BookAppointmentPage = () => {

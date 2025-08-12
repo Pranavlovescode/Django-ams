@@ -1,10 +1,10 @@
-import { Button } from "@/Components/ui/button";
+import { Button } from "@/components/ui/button";
 import {
   InputOTP,
   InputOTPGroup,
   InputOTPSlot, 
-} from "@/Components/ui/input-otp";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/Components/ui/card";
+} from "@/components/ui/input-otp";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import axios from "axios";
 import React, { useEffect } from "react";
 import { useState } from "react";

@@ -6,7 +6,7 @@ import Signup from "@/Pages/Signup";
 import AppointmentPage from "@/Pages/AppoinmentPage";
 import EditAppointmentPage from "@/Pages/EditAppoinmentPage";
 import BookAppointmentPage from "@/Pages/BookAppoinmentPage";
-import Sidebar from "@/Components/Sidebar";
+import Sidebar from "@/components/Sidebar";
 import PackageForm from "@/Pages/PackageForm";
 import PackageMaster from "@/Pages/PackageMaster";
 import ServiceMaster from "@/Pages/ServiceMaster";
@@ -14,7 +14,7 @@ import ServiceMaster from "@/Pages/ServiceMaster";
 import ServiceForm from "@/Pages/ServiceForm";
 import OtpverifyPage from "@/Pages/OtpverifyPage";
 import PaymentPage from "@/Pages/PaymentPage";
-import PaymentForm from "@/Components/PaymentForm";
+import PaymentForm from "@/components/PaymentForm";
 import UserPage from "@/Pages/UserPage";
 import UserTable from "@/Pages/UserTable";
 import { LocalizationProvider } from "@mui/x-date-pickers";
@@ -31,7 +31,7 @@ import EmployeeTable from "@/Pages/EmployeeTable";
 
 function App() {
   const location = useLocation();
-  const noSidebarRoutes = [ "/signup", "/verify-otp"];
+  const noSidebarRoutes = [ "/signup", "/verify-otp","/login"];
 
   return (
     <>
@@ -45,7 +45,7 @@ function App() {
           <Routes>
             {!localStorage.getItem("token") ? (
               <>
-                <Route path="/" element={<Login />} />
+                <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
               </>
             ) : (

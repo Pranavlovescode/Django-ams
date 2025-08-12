@@ -121,10 +121,10 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/Components/ui/card";
-import { Input } from "@/Components/ui/input";
-import { Label } from "@/Components/ui/label";
-import { Button } from "@/Components/ui/button";
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import axios from "axios";
 import Select from "react-select"; // Import react-select for dynamic search dropdown
 import { useNavigate } from "react-router-dom"; // For navigation
