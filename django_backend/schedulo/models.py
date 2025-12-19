@@ -19,6 +19,7 @@ class UserProfile(models.Model):
     user = models.OneToOneField(DjangoUser, on_delete=models.CASCADE, related_name='profile')
     profile_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     user_type = models.CharField(max_length=10, choices=USER_TYPES, default='customer')
+    role = models.CharField(max_length=50, blank=True, null=True)
     phone_number = models.CharField(max_length=15, blank=True, null=True)
     address = models.TextField(blank=True, null=True)
     date_of_birth = models.DateField(blank=True, null=True)
@@ -45,6 +46,8 @@ class Outlet(models.Model):
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    employee_staff = models.ManyToManyField(UserProfile, related_name='outlets', 
+                                        limit_choices_to={'user_type': 'employee'}, blank=True)
     
     # def __str__(self):
     #     return self.name

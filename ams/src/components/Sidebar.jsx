@@ -143,7 +143,7 @@ function Sidebar() {
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
+                  {/* <DropdownMenuItem asChild>
                     <Link to="/employeeform">Add Employee</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
@@ -151,8 +151,8 @@ function Sidebar() {
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link to="/add-user">Add User</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
+                  </DropdownMenuItem> */}
+                  {/* <DropdownMenuSeparator /> */}
                   <DropdownMenuItem onClick={handleLogoutProcess}>
                     Sign out
                   </DropdownMenuItem>
@@ -381,9 +381,9 @@ function Sidebar() {
             <Separator className="my-4" />
 
             {/* Management Section */}
-            {userRole === "admin" ? (
-              <>
-                <div className="space-y-1">
+            <div className="space-y-1">
+              {userRole === "admin" ? (
+                <>
                   <p className="px-3 text-xs font-semibold text-pink-600 uppercase tracking-wider">
                     Management
                   </p>
@@ -414,27 +414,6 @@ function Sidebar() {
                     className="w-full justify-start h-10 hover:bg-pink-100 hover:text-pink-700 text-left"
                     asChild
                   >
-                    <Link to="/users">
-                      <svg
-                        className="w-5 h-5 mr-3"
-                        aria-hidden="true"
-                        fill="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-                        <circle cx="9" cy="7" r="4" />
-                        <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-                        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                      </svg>
-                      Users
-                    </Link>
-                  </Button>
-
-                  <Button
-                    variant="ghost"
-                    className="w-full justify-start h-10 hover:bg-pink-100 hover:text-pink-700 text-left"
-                    asChild
-                  >
                     <Link to="/get-employee">
                       <svg
                         className="w-5 h-5 mr-3"
@@ -450,14 +429,32 @@ function Sidebar() {
                       Employees
                     </Link>
                   </Button>
-                </div>
-
-                <Separator className="my-4" />
-              </>
-            ) : (
-              <></> 
-            )}
-
+                </>
+              ) : (
+                <></>
+              )}
+              <Button
+                variant="ghost"
+                className="w-full justify-start h-10 hover:bg-pink-100 hover:text-pink-700 text-left"
+                asChild
+              >
+                <Link to="/users">
+                  <svg
+                    className="w-5 h-5 mr-3"
+                    aria-hidden="true"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                    <circle cx="9" cy="7" r="4" />
+                    <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                  </svg>
+                  Users
+                </Link>
+              </Button>
+            </div>
+            <Separator className="my-4" />
             {/* Footer Menu: Profile & Logout */}
             <div className="space-y-1 pt-4">
               {/* <Button

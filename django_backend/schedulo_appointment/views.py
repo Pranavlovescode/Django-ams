@@ -1,3 +1,4 @@
+import re
 from django.shortcuts import render
 from rest_framework import status
 from rest_framework.response import Response
@@ -394,7 +395,7 @@ def package_function(request):
         
 
 """User Details Route"""
-@api_view(["GET","POST"])
+@api_view(["GET","PATCH","POST"])
 @permission_classes([IsAuthenticated])
 def user_details(request):
     if request.method == "GET":
@@ -417,8 +418,71 @@ def user_details(request):
             return Response({
                 'message': "User profile not found"
             }, status=status.HTTP_404_NOT_FOUND)
-        
+
     if request.method == "POST":
+        try:
+            first_name = request.data.get('first_name')
+            last_name = request.data.get('last_name')
+            email = request.data.get('email')
+            phone_number = request.data.get('phone_number')
+            role = request.data.get('role')
+            dob = request.data.get('date_of_birth')
+            user_type = request.data.get('user_type')
+        
+            custom_username = f"{first_name.lower()}{last_name.lower()}"
+
+            django_user = DjangoUser.objects.create_user(
+                username=custom_username,
+                password=dob,
+                first_name=first_name,
+                last_name=last_name,
+                email=email
+            )
+
+            if user_type == 'employee':
+                profile = UserProfile.objects.create(
+                    user=django_user,
+                    role=role,
+                    phone_number=phone_number,
+                    date_of_birth=dob,
+                    user_type=user_type
+                )
+                outlet_id = request.data.get('outlet_id')
+                try:
+                    outlet = Outlet.objects.get(outlet_id=outlet_id)
+                    outlet.employee_staff.add(profile)
+                except Outlet.DoesNotExist:
+                    return Response({
+                        'message': f"Outlet with ID {outlet_id} not found"
+                    }, status=status.HTTP_404_NOT_FOUND)
+            
+            else:
+                profile = UserProfile.objects.create(
+                    user=django_user,
+                    phone_number=phone_number,
+                    date_of_birth=dob,
+                    user_type=user_type
+                )
+            
+            return Response({
+                'message': "User created successfully",
+                'user_profile': {
+                    'profile_id': profile.profile_id,
+                    # 'first_name': profile.first_name,
+                    # 'last_name': profile.last_name,
+                    'email': profile.email,
+                    'phone_number': profile.phone_number,
+                    'role': profile.role,
+                }}, status=status.HTTP_201_CREATED)
+        
+
+        except Exception as e:
+            return Response({
+                'message': f"Error creating user: {str(e)}"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        
+    if request.method == "PATCH":
         user = request.user
         try:
             user_profile = UserProfile.objects.get(user=user)

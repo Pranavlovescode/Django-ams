@@ -95,6 +95,7 @@ def signup_api(request):
     date_of_birth = request.data.get('dob')
     first_name = request.data.get('first_name', '')
     last_name = request.data.get('last_name', '')
+    email = request.data.get('email', '')
     user_type = 'customer'  # Default user type
     print(f"request body: {request.data}")
     # Validate required fields
@@ -116,7 +117,8 @@ def signup_api(request):
         username=username,
         password=password,  # This will be hashed automatically
         first_name=first_name,
-        last_name=last_name
+        last_name=last_name,
+        email=email
     )
     
     # Create the profile
