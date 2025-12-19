@@ -1,4 +1,3 @@
-import re
 from django.shortcuts import render
 from rest_framework import status
 from rest_framework.response import Response
@@ -9,7 +8,7 @@ from django.contrib.auth.hashers import make_password
 from django.contrib.auth import get_user_model, authenticate
 from schedulo.models import UserProfile,Appointment,Outlet,Service,Package
 from django.contrib.auth.models import User as DjangoUser
-from schedulo.serialzers import OutletSerializer,AppointmentSerializer,ServiceSerializer,PackageSerializer
+from schedulo.serialzers import OutletSerializer,AppointmentSerializer,ServiceSerializer,PackageSerializer, UserProfileSerializer
 from datetime import timedelta
 
 """ Appointment Routes"""
@@ -229,7 +228,7 @@ def outlets(request):
 
 
 """Services Routes"""
-@api_view(["GET","POST"])
+@api_view(["GET","POST","PATCH","DELETE"])
 @permission_classes([IsAuthenticated])
 def services_function(request):
     outlet_id = request.query_params.get('outlet_id')
@@ -317,16 +316,106 @@ def services_function(request):
             return Response({
                 'message': f"Error saving services: {str(e)}"
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
+    
+    if request.method == "PATCH":
+        service_id = request.query_params.get('service_id')
+        try:
+            service = Service.objects.get(service_id=service_id)
+
+            # Extract outlets from request data to handle separately
+            outlets_ids = request.data.get('outlets', [])
+            
+            # Only allow updating specific fields, exclude read-only and nested fields
+            allowed_fields = ['name', 'description', 'duration', 'price', 'category', 'is_active']
+            data_for_update = {k: v for k, v in request.data.items() if k in allowed_fields}
+            
+            # Log the data being sent for debugging
+            print(f"Service update data (filtered): {data_for_update}")
+
+            # Use DRF serializer to validate and update standard fields
+            serializer = ServiceSerializer(service, data=data_for_update, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                
+                # Handle many-to-many outlets relationship separately
+                if outlets_ids:
+                    if not isinstance(outlets_ids, list):
+                        return Response({
+                            'message': "Outlets should be a list of outlet IDs"
+                        }, status=status.HTTP_400_BAD_REQUEST)
+                    
+                    outlets = Outlet.objects.filter(outlet_id__in=outlets_ids)
+                    if outlets.count() != len(outlets_ids):
+                        return Response({
+                            'message': "One or more outlets not found"
+                        }, status=status.HTTP_404_NOT_FOUND)
+                    
+                    service.outlets.set(outlets)
+                
+                return Response({
+                    'message': "Service updated successfully",
+                    'service': ServiceSerializer(service).data
+                }, status=status.HTTP_200_OK)
+            else:
+                # Log detailed errors for debugging
+                print(f"Serializer validation errors: {serializer.errors}")
+                return Response({
+                    'message': "Invalid data",
+                    'errors': serializer.errors
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+        except Service.DoesNotExist:
+            return Response({
+                'message': f"Service with ID {service_id} does not exist"
+            }, status=status.HTTP_404_NOT_FOUND)
+    
+    if request.method == "DELETE":
+        service_id = request.query_params.get('service_id')
+
+        if not service_id:
+            return Response({
+                'message': "Missing service_id in query parameters"
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            service = Service.objects.get(service_id=service_id)
+            service.delete()
+            return Response({
+                'message': "Service deleted successfully"
+            }, status=status.HTTP_200_OK) 
+
+        except Service.DoesNotExist:
+            return Response({
+                'message': f"Service with ID {service_id} does not exist"
+            }, status=status.HTTP_404_NOT_FOUND)
+
 
 """Package Routes"""
-@api_view(["GET","POST"])
+@api_view(["GET","POST","PATCH","DELETE"])
 @permission_classes([IsAuthenticated])
 def package_function(request):
     outlet_id = request.query_params.get('outlet_id')
+    package_id = request.query_params.get('package_id')
     if request.method == "GET":
         try:
-            packages = Package.objects.filter(outlets__outlet_id=outlet_id).distinct()
+            if package_id:
+                try:
+                    one_package = Package.objects.get(package_id=package_id)
+                    serializer = PackageSerializer(one_package)
+                    return Response({
+                        'message': "Package fetched successfully",
+                        "package": serializer.data
+                    }, status=status.HTTP_200_OK)
+                except Package.DoesNotExist:
+                    return Response({
+                        'message': "Package not found"
+                    }, status=status.HTTP_404_NOT_FOUND)
+            
+            elif outlet_id:
+                packages = Package.objects.filter(outlets__outlet_id=outlet_id, is_active=True).distinct()
+            else:
+                packages = Package.objects.filter(is_active=True).distinct()
+
             serializer = PackageSerializer(packages, many=True)
             return Response({
                 'message': "Packages fetched successfully",
@@ -342,8 +431,8 @@ def package_function(request):
             name = request.data.get('name')
             description = request.data.get('description')
             price = request.data.get('price')
-            validity_days = request.data.get('validity_days')
-            outlet_id = request.data.get('outlet_id')
+            duration = request.data.get('duration')
+            # outlet_id = request.data.get('outlet_id')
 
 
             outlet = Outlet.objects.get(outlet_id=outlet_id)
@@ -352,7 +441,7 @@ def package_function(request):
                 name=name,
                 description=description,
                 price=price,
-                validity_days=validity_days,
+                duration=duration,
                 is_active=True
             )
             new_package.save()
@@ -392,7 +481,79 @@ def package_function(request):
             return Response({
                 'message': f"Error creating package: {str(e)}"
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
+    
+    if request.method == "PATCH":
+        package_id = request.query_params.get('package_id')
+        try:
+            package = Package.objects.get(package_id=package_id)
+
+            # Extract services from request data to handle separately
+            services_ids = request.data.get('services', [])
+            
+            # Only allow updating specific fields, exclude read-only and nested fields
+            allowed_fields = ['name', 'description', 'price', 'duration', 'category', 'validity_days', 'is_active']
+            data_for_update = {k: v for k, v in request.data.items() if k in allowed_fields}
+            
+            # Log the data being sent for debugging
+            print(f"Package update data (filtered): {data_for_update}")
+
+            # Use DRF serializer to validate and update standard fields
+            serializer = PackageSerializer(package, data=data_for_update, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                
+                # Handle many-to-many services relationship separately
+                if services_ids:
+                    if not isinstance(services_ids, list):
+                        return Response({
+                            'message': "Services should be a list of service IDs"
+                        }, status=status.HTTP_400_BAD_REQUEST)
+                    
+                    services = Service.objects.filter(service_id__in=services_ids)
+                    if services.count() != len(services_ids):
+                        return Response({
+                            'message': "One or more services not found"
+                        }, status=status.HTTP_404_NOT_FOUND)
+                    
+                    package.services.set(services)
+                
+                return Response({
+                    'message': "Package updated successfully",
+                    'package': PackageSerializer(package).data
+                }, status=status.HTTP_200_OK)
+            else:
+                # Log detailed errors for debugging
+                print(f"Serializer validation errors: {serializer.errors}")
+                return Response({
+                    'message': "Invalid data",
+                    'errors': serializer.errors
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+        except Package.DoesNotExist:
+            return Response({
+                'message': f"Package with ID {package_id} does not exist"
+            }, status=status.HTTP_404_NOT_FOUND)
+    
+    if request.method == "DELETE":
+        package_id = request.query_params.get('package_id')
+
+        if not package_id:
+            return Response({
+                'message': "Missing package_id in query parameters"
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            package = Package.objects.get(package_id=package_id)
+            package.delete()
+            return Response({
+                'message': "Package deleted successfully"
+            }, status=status.HTTP_200_OK) 
+
+        except Package.DoesNotExist:
+            return Response({
+                'message': f"Package with ID {package_id} does not exist"
+            }, status=status.HTTP_404_NOT_FOUND)
+    
 
 """User Details Route"""
 @api_view(["GET","PATCH","POST"])
@@ -463,17 +624,11 @@ def user_details(request):
                     date_of_birth=dob,
                     user_type=user_type
                 )
-            
+            serializer = UserProfileSerializer(profile)
             return Response({
                 'message': "User created successfully",
-                'user_profile': {
-                    'profile_id': profile.profile_id,
-                    # 'first_name': profile.first_name,
-                    # 'last_name': profile.last_name,
-                    'email': profile.email,
-                    'phone_number': profile.phone_number,
-                    'role': profile.role,
-                }}, status=status.HTTP_201_CREATED)
+                'user_profile': serializer.data
+                }, status=status.HTTP_201_CREATED)
         
 
         except Exception as e:
@@ -488,25 +643,18 @@ def user_details(request):
             user_profile = UserProfile.objects.get(user=user)
 
             # Update fields if provided in the request data
-            user_profile.first_name = request.data.get('first_name', user_profile.first_name)
-            user_profile.last_name = request.data.get('last_name', user_profile.last_name)
-            user_profile.email = request.data.get('email', user_profile.email)
+            user_profile.user.first_name = request.data.get('first_name', user_profile.user.first_name)
+            user_profile.user.last_name = request.data.get('last_name', user_profile.user.last_name)
+            user_profile.user.email = request.data.get('email', user_profile.user.email)
             user_profile.phone_number = request.data.get('phone_number', user_profile.phone_number)
 
+            user_profile.user.save()
             user_profile.save()
-
-            profile_data = {
-                'profile_id': user_profile.profile_id,
-                'first_name': user_profile.first_name,
-                'last_name': user_profile.last_name,
-                'email': user_profile.email,
-                'phone_number': user_profile.phone_number,
-                'role': user_profile.role,
-            }
-
+            serializer = UserProfileSerializer(user_profile)
+            
             return Response({
                 'message': "User profile updated successfully",
-                'user_profile': profile_data
+                'user_profile': serializer.data
             }, status=status.HTTP_200_OK)
 
         except UserProfile.DoesNotExist:

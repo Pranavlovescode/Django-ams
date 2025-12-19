@@ -32,7 +32,7 @@ class PackageSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Package
-        fields = ['package_id','name','description','price','services','products','is_active','validity_days','outlets','created_at','updated_at']
+        fields = ['package_id','name','category','duration','description','price','services','products','is_active','validity_days','outlets','created_at','updated_at']
 
 class AppointmentSerializer(serializers.ModelSerializer):
     outlet = OutletSerializer()

@@ -14,11 +14,11 @@ const BookAppointmentPage = () => {
       console.log(formData); // Add this line to check the data being sent
 
       const response = await axios.post(
-        `${import.meta.env.VITE_URL}/api/appointment/create`,
+        `${import.meta.env.VITE_URL}/app/appointment/`,
         formData,
         {
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `Token ${token}`,
           },
         }
       );

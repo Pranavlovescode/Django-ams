@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import Select from 'react-select';
-import LogoutWarning from '@/components/LogoutWarning';
-import { jwtDecode } from 'jwt-decode';
+import React, { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import axios from "axios";
+import Select from "react-select";
+import LogoutWarning from "@/components/LogoutWarning";
+import { jwtDecode } from "jwt-decode";
 import {
   Card,
   CardHeader,
@@ -14,46 +14,63 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Package, Save, X, Clock, IndianRupee, Tag, Layers } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Package,
+  Save,
+  X,
+  Clock,
+  IndianRupee,
+  Tag,
+  Layers,
+  FileText,
+} from "lucide-react";
 
 const PackageForm = () => {
-  const { id } = useParams();  
+  const { id } = useParams();
   const navigate = useNavigate();
-  
+
   // State for package data
   const [packageData, setPackageData] = useState({
-    package_name: '', 
-    price: '',
-    estimated_time: '',  
-    category: '',
+    name: "",
+    price: "",
+    duration: "",
+    category: "",
+    description: "",
     services: [],
   });
-  
+
   // State for fetching available services
   const [availableServices, setAvailableServices] = useState([]);
-  
+
   // State for token management
-  const [token, setToken] = useState({
-    token: "",
-    user_data: {}
-  });
+  const [token, setToken] = useState(localStorage.getItem("token") || "");
 
   // Fetch available services and package data if editing
   useEffect(() => {
     // Fetch available services
     const fetchServices = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/services');
-        console.log("redposnse",response)
+        const response = await axios.get(
+          `${import.meta.env.VITE_URL}/app/services/`,
+          {
+            headers: { Authorization: `Token ${token}` },
+            params: {
+              outlet_id:
+                JSON.parse(localStorage.getItem("outlet"))?.outlet_id || null,
+            },
+          }
+        );
+        console.log("response", response.data.services);
         // Map services for react-select (label, value format)
-        const servicesOptions = response.data.map(service => ({
-          label: service.service_name,
-          value: service._id,
+        const servicesOptions = response.data.services.map((service) => ({
+          label: service.name,
+          value: service.service_id,
         }));
-        console.log(servicesOptions)
-        setAvailableServices(servicesOptions);  // Set the available services
+        console.log(servicesOptions);
+        setAvailableServices(servicesOptions); // Set the available services
       } catch (error) {
-        console.error('Error fetching services:', error);
+        console.error("Error fetching services:", error);
       }
     };
 
@@ -73,35 +90,27 @@ const PackageForm = () => {
     if (id) {
       const fetchPackage = async () => {
         try {
-          const response = await axios.get(`http://localhost:5000/api/packages/${id}`);
-          const existingPackage = response.data;
+          const response = await axios.get(
+            `${import.meta.env.VITE_URL}/app/packages/`,
+            {
+              headers: { Authorization: `Token ${token}` },
+              params: {
+                package_id: id,
+              },
+            }
+          );
+          const existingPackage = response.data.package;
 
           // Set package data, including selected services
           setPackageData({
             ...existingPackage,
-            services: existingPackage.services.map(service => service._id),  // Set services to an array of IDs
+            services: existingPackage.services.map((service) => service.service_id), // Set services to an array of IDs
           });
         } catch (error) {
-          console.error('Error fetching package:', error);
+          console.error("Error fetching package:", error);
         }
       };
       fetchPackage();
-    }
-
-    // Check for token expiration
-    const storedToken = JSON.parse(localStorage.getItem("auth_data"));
-    if (storedToken) {
-      setToken(storedToken);
-      try {
-        const decoded = jwtDecode(storedToken.token);
-        const currentTime = Date.now() / 1000;
-        if (decoded.exp < currentTime) {
-          localStorage.removeItem("auth_data");
-          setToken({ token: null, user_data: {} });
-        }
-      } catch (error) {
-        console.log(error);      
-      }
     }
   }, [id]);
 
@@ -117,7 +126,9 @@ const PackageForm = () => {
   // Handle service selection using react-select
   const handleServiceChange = (selectedOptions) => {
     // Get selected services' IDs
-    const selectedServices = selectedOptions ? selectedOptions.map(option => option.value) : [];
+    const selectedServices = selectedOptions
+      ? selectedOptions.map((option) => option.value)
+      : [];
     setPackageData((prevState) => ({
       ...prevState,
       services: selectedServices,
@@ -130,50 +141,72 @@ const PackageForm = () => {
     try {
       if (id) {
         // Update existing package
-        await axios.put(`http://localhost:5000/api/packages/${id}`, packageData);
+        const response = await axios.patch(
+          `${import.meta.env.VITE_URL}/app/packages/`,
+          packageData,
+          {
+            headers: { Authorization: `Token ${token}` },
+            params: {
+              // outlet_id:
+              //   JSON.parse(localStorage.getItem("outlet"))?.outlet_id || null,
+              package_id: id,
+            },
+          }
+        );
+        
       } else {
         // Create new package
-        await axios.post('http://localhost:5000/api/packages', packageData);
+        await axios.post(
+          `${import.meta.env.VITE_URL}/app/packages/`,
+          packageData,
+          {
+            headers: { Authorization: `Token ${token}` },
+            params: {
+              outlet_id:
+                JSON.parse(localStorage.getItem("outlet"))?.outlet_id || null,
+            },
+          }
+        );
       }
-      navigate('/package-master');  // Redirect after submission
+      navigate("/package-master"); // Redirect after submission
     } catch (error) {
-      console.error('Error saving package:', error);
+      console.error("Error saving package:", error);
     }
   };
   // Custom styles for react-select components
   const customSelectStyles = {
     control: (provided, state) => ({
       ...provided,
-      minHeight: '48px',
-      border: '2px solid #f9a8d4',
-      borderRadius: '8px',
-      boxShadow: 'none',
-      '&:hover': {
-        borderColor: '#ec4899',
+      minHeight: "48px",
+      border: "2px solid #f9a8d4",
+      borderRadius: "8px",
+      boxShadow: "none",
+      "&:hover": {
+        borderColor: "#ec4899",
       },
-      borderColor: state.isFocused ? '#ec4899' : '#f9a8d4',
+      borderColor: state.isFocused ? "#ec4899" : "#f9a8d4",
     }),
     multiValue: (provided) => ({
       ...provided,
-      backgroundColor: '#fce7f3',
-      borderRadius: '6px',
+      backgroundColor: "#fce7f3",
+      borderRadius: "6px",
     }),
     multiValueLabel: (provided) => ({
       ...provided,
-      color: '#be185d',
-      fontWeight: '500',
+      color: "#be185d",
+      fontWeight: "500",
     }),
     multiValueRemove: (provided) => ({
       ...provided,
-      color: '#be185d',
-      '&:hover': {
-        backgroundColor: '#ec4899',
-        color: 'white',
+      color: "#be185d",
+      "&:hover": {
+        backgroundColor: "#ec4899",
+        color: "white",
       },
     }),
     placeholder: (provided) => ({
       ...provided,
-      color: '#9ca3af',
+      color: "#9ca3af",
     }),
   };
 
@@ -187,35 +220,43 @@ const PackageForm = () => {
                 <Package className="w-8 h-8 text-white" />
               </div>
               <CardTitle className="text-3xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
-                {id ? 'Edit Package' : 'Create New Package'}
+                {id ? "Edit Package" : "Create New Package"}
               </CardTitle>
               <CardDescription className="text-gray-600 text-lg">
-                {id ? 'Update package details below' : 'Create a comprehensive service package for your salon'}
+                {id
+                  ? "Update package details below"
+                  : "Create a comprehensive service package for your salon"}
               </CardDescription>
             </CardHeader>
-            
+
             <CardContent className="space-y-6">
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="package_name" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                    <Label
+                      htmlFor="package_name"
+                      className="text-sm font-semibold text-gray-700 flex items-center gap-2"
+                    >
                       <Package className="w-4 h-4 text-pink-600" />
                       Package Name
                     </Label>
                     <Input
                       id="package_name"
                       type="text"
-                      name="package_name"
-                      value={packageData.package_name}
+                      name="name"
+                      value={packageData.name}
                       onChange={handleInputChange}
                       placeholder="Enter package name"
                       className="h-12 border-2 border-pink-200 focus:border-pink-500 focus:ring-pink-500"
                       required
                     />
                   </div>
-                  
+
                   <div className="space-y-2">
-                    <Label htmlFor="price" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                    <Label
+                      htmlFor="price"
+                      className="text-sm font-semibold text-gray-700 flex items-center gap-2"
+                    >
                       <IndianRupee className="w-4 h-4 text-pink-600" />
                       Price (₹)
                     </Label>
@@ -236,24 +277,30 @@ const PackageForm = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="estimated_time" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                    <Label
+                      htmlFor="estimated_time"
+                      className="text-sm font-semibold text-gray-700 flex items-center gap-2"
+                    >
                       <Clock className="w-4 h-4 text-pink-600" />
                       Estimated Time
                     </Label>
                     <Input
-                      id="estimated_time"
+                      id="duration"
                       type="text"
-                      name="estimated_time"
-                      value={packageData.estimated_time}
+                      name="duration"
+                      value={packageData.duration}
                       onChange={handleInputChange}
                       placeholder="e.g., 2 hours"
                       className="h-12 border-2 border-pink-200 focus:border-pink-500 focus:ring-pink-500"
                       required
                     />
                   </div>
-                  
+
                   <div className="space-y-2">
-                    <Label htmlFor="category" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                    <Label
+                      htmlFor="category"
+                      className="text-sm font-semibold text-gray-700 flex items-center gap-2"
+                    >
                       <Tag className="w-4 h-4 text-pink-600" />
                       Category
                     </Label>
@@ -271,6 +318,25 @@ const PackageForm = () => {
                 </div>
 
                 <div className="space-y-2">
+                  <Label
+                    htmlFor="description"
+                    className="text-sm font-semibold text-gray-700 flex items-center gap-2"
+                  >
+                    <FileText className="w-4 h-4 text-pink-600" />
+                    Description
+                  </Label>
+                  <Textarea
+                    id="description"
+                    name="description"
+                    value={packageData.description}
+                    onChange={handleInputChange}
+                    placeholder="Enter package description and details..."
+                    className="min-h-[120px] border-2 border-pink-200 focus:border-pink-500 focus:ring-pink-500 resize-none"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
                   <Label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
                     <Layers className="w-4 h-4 text-pink-600" />
                     Included Services
@@ -278,8 +344,9 @@ const PackageForm = () => {
                   <Select
                     isMulti
                     options={availableServices}
-                    value={availableServices.filter(service => 
-                      packageData.services.includes(service.value))}
+                    value={availableServices.filter((service) =>
+                      packageData.services.includes(service.value)
+                    )}
                     onChange={handleServiceChange}
                     placeholder="Select services to include in this package..."
                     styles={customSelectStyles}
@@ -287,19 +354,19 @@ const PackageForm = () => {
                     classNamePrefix="select"
                   />
                 </div>
-                
+
                 <div className="flex flex-col sm:flex-row gap-4 pt-4">
-                  <Button 
+                  <Button
                     type="submit"
                     className="flex-1 h-12 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white font-semibold text-lg shadow-lg transition-all duration-200 transform hover:scale-[1.02]"
                   >
                     <Save className="w-5 h-5 mr-2" />
-                    {id ? 'Update Package' : 'Create Package'}
+                    {id ? "Update Package" : "Create Package"}
                   </Button>
-                  <Button 
+                  <Button
                     type="button"
                     variant="outline"
-                    onClick={() => navigate('/package-master')}
+                    onClick={() => navigate("/package-master")}
                     className="flex-1 h-12 border-2 border-gray-300 hover:border-gray-400 text-gray-700 font-semibold text-lg transition-all duration-200"
                   >
                     <X className="w-5 h-5 mr-2" />

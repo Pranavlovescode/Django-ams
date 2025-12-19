@@ -28,6 +28,7 @@ const AppointmentForm = ({ appointment, onSave, onCancel }) => {
   const [allServices, setAllServices] = useState([]);
   const [allPackages, setAllPackages] = useState([]);
   const navigate = useNavigate();
+  const outlet_id = JSON.parse(localStorage.getItem("outlet"))?.outlet_id || null;
   const token = localStorage.getItem("token") || "";
 
   // Fetch services and packages on mount
@@ -35,21 +36,23 @@ const AppointmentForm = ({ appointment, onSave, onCancel }) => {
     const fetchServicesAndPackages = async () => {
       try {
         const [servicesResponse, packagesResponse] = await Promise.all([
-          axios.get(`${import.meta.env.VITE_URL}/api/services/get`, {
-            headers: { Authorization: `Bearer ${token}` },
+          axios.get(`${import.meta.env.VITE_URL}/app/services/`, {
+            headers: { Authorization: `Token ${token}` },
+            params: { outlet_id: outlet_id },
           }),
-          axios.get(`${import.meta.env.VITE_URL}/api/packages/get`, {
-            headers: { Authorization: `Bearer ${token}` },
+          axios.get(`${import.meta.env.VITE_URL}/app/packages/`, {
+            headers: { Authorization: `Token ${token}` },
+            params: { outlet_id: outlet_id },
           }),
         ]);
 
-        const servicesOptions = servicesResponse.data.map((service) => ({
+        const servicesOptions = servicesResponse.data.service.map((service) => ({
           label: service.name,
           id: service.id,
           service_price: Number(service.price),
         }));
 
-        const packagesOptions = packagesResponse.data.map((pkg) => ({
+        const packagesOptions = packagesResponse.data.package.map((pkg) => ({
           label: pkg.name,
           id: pkg.id,
           pkg_price: Number(pkg.price),

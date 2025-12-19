@@ -141,7 +141,7 @@ const PackageMaster = () => {
                             className="hover:bg-pink-50/50 transition-colors"
                           >
                             <TableCell className="text-center font-medium">
-                              {pkg.package_name}
+                              {pkg.name}
                             </TableCell>
                             <TableCell className="text-center">
                               <Badge
@@ -158,7 +158,7 @@ const PackageMaster = () => {
                                 className="bg-blue-50 text-blue-700 border-blue-200"
                               >
                                 <Clock className="w-3 h-3 mr-1" />
-                                {pkg.estimated_time}
+                                {pkg.duration}
                               </Badge>
                             </TableCell>
                             <TableCell className="text-center">
@@ -177,14 +177,14 @@ const PackageMaster = () => {
                                     variant="secondary"
                                     className="bg-pink-100 text-pink-700"
                                   >
-                                    {service.service_name}
+                                    {service.name}
                                   </Badge>
                                 ))}
                               </div>
                             </TableCell>
                             <TableCell className="text-center">
                               <div className="flex justify-center gap-2">
-                                <Link to={`/edit-package/${pkg._id}`}>
+                                <Link to={`/edit-package/${pkg.package_id}`}>
                                   <Button
                                     variant="outline"
                                     size="sm"

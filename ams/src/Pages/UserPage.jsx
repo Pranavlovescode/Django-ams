@@ -11,15 +11,18 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { UserPlus, Mail, Phone, User } from "lucide-react";
+import { UserPlus, Mail, Phone, User,Calendar } from "lucide-react";
 
 const UserPage = () => {
-  const token = localStorage.getItem("token");
+  const [token, setToken] = useState(localStorage.getItem("token") || "");
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    name: "",
-    mobileNumber: "",
+    first_name: "",
+    last_name: "",
+    phone_number: "",
+    date_of_birth: "",
     email: "",
+    user_type: "customer",
   });
 
   const handleChange = (e) => {
@@ -33,12 +36,15 @@ const UserPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post(`${import.meta.env.VITE_URL}/app/user/`, formData,{
+      console.log(formData)
+      const response = await axios.post(`${import.meta.env.VITE_URL}/app/user/`, formData,{
         headers:{
           "Authorization":`Token ${token}`
         }
       });
+      console.log("The form response", response.data)
       console.log("User added successfully");
+      alert("User added successfully");
       navigate("/users");
     } catch (error) {
       console.error("Error adding user:", error);
@@ -65,32 +71,64 @@ const UserPage = () => {
               <div className="space-y-2">
                 <Label htmlFor="name" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
                   <User className="w-4 h-4 text-pink-600" />
-                  Full Name
+                  First Name
                 </Label>
                 <Input
                   id="name"
                   type="text"
-                  name="name"
-                  value={formData.name}
+                  name="first_name"
+                  value={formData.first_name}
                   onChange={handleChange}
-                  placeholder="Enter full name"
+                  placeholder="Enter first name"
+                  className="h-12 border-2 border-pink-200 focus:border-pink-500 focus:ring-pink-500"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="name" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                  <User className="w-4 h-4 text-pink-600" />
+                  Last Name
+                </Label>
+                <Input
+                  id="last_name"
+                  type="text"
+                  name="last_name"
+                  value={formData.last_name}
+                  onChange={handleChange}
+                  placeholder="Enter last name"
                   className="h-12 border-2 border-pink-200 focus:border-pink-500 focus:ring-pink-500"
                   required
                 />
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="mobileNumber" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                <Label htmlFor="phone_number" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
                   <Phone className="w-4 h-4 text-pink-600" />
                   Mobile Phone
                 </Label>
                 <Input
-                  id="mobileNumber"
+                  id="phone_number"
                   type="tel"
-                  name="mobileNumber"
-                  value={formData.mobileNumber}
+                  name="phone_number"
+                  value={formData.phone_number}
                   onChange={handleChange}
                   placeholder="Enter mobile number"
+                  className="h-12 border-2 border-pink-200 focus:border-pink-500 focus:ring-pink-500"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="phone_number" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-pink-600" />
+                  Date of Birth
+                </Label>
+                <Input
+                  id="date_of_birth"
+                  type="date"
+                  name="date_of_birth"
+                  value={formData.date_of_birth}
+                  onChange={handleChange}
+                  placeholder="Enter date of birth"
                   className="h-12 border-2 border-pink-200 focus:border-pink-500 focus:ring-pink-500"
                   required
                 />

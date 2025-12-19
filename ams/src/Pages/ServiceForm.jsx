@@ -62,6 +62,8 @@ const ServiceForm = () => {
               response.data.service.price, // Handle numberDecimal
             duration: response.data.service.duration,
             description: response.data.service.description || "",
+            outlets: response.data.service.outlets || [],
+            category: response.data.service.category || "",
           });
         } catch (error) {
           console.error("Error fetching service data:", error);
@@ -89,9 +91,17 @@ const ServiceForm = () => {
     e.preventDefault();
     try {
       if (id) {
-        await axios.put(
-          `${import.meta.env.VITE_URL}/api/services/update/${id}`,
-          serviceData
+        await axios.patch(
+          `${import.meta.env.VITE_URL}/app/services/`,
+          serviceData,
+          {
+            headers: {
+              Authorization: `Token ${token}`,
+            },
+            params: {
+              service_id: id,
+            },
+          }
         );
       } else {
         console.log("serviceData", serviceData);
