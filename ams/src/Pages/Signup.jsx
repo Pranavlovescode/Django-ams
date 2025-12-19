@@ -19,6 +19,8 @@ function SignUp() {
   const [address, setAddress] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [dob, setDob] = useState("");
+  const [first_name, setFirst_name] = useState("");
+  const [last_name, setLast_name] = useState("");
   const navigate = useNavigate();
 
   const handleAddUser = async () => {
@@ -28,7 +30,9 @@ function SignUp() {
       password.trim() &&
       address.trim() &&
       confirmPassword.trim() &&
-      dob.trim()
+      dob.trim() &&
+      first_name.trim() &&
+      last_name.trim()
     ) {
       if (password === confirmPassword) {
         const userDetails = {
@@ -37,6 +41,8 @@ function SignUp() {
           password,
           address,
           dob,
+          first_name,
+          last_name,
         };
         try {
           const response = await axios.post(
@@ -53,7 +59,9 @@ function SignUp() {
           setConfirmPassword("");
           setAddress("");
           setDob("");
-          navigate("/tasks");
+          setFirst_name("");
+          setLast_name("");
+          navigate("/");
         } catch (error) {
           console.error("Error adding user:", error.message);
         }
@@ -89,6 +97,26 @@ function SignUp() {
                 placeholder="Enter your username"
                 value={username}
                 onChange={(e) => setusername(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-semibold text-pink-700">
+                First Name
+              </label>
+              <Input
+                placeholder="Enter your first name"
+                value={first_name}
+                onChange={(e) => setFirst_name(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-semibold text-pink-700">
+                Last Name
+              </label>
+              <Input
+                placeholder="Enter your last name"
+                value={last_name}
+                onChange={(e) => setLast_name(e.target.value)}
               />
             </div>
             <div>

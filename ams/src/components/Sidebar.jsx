@@ -22,6 +22,7 @@ function Sidebar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [userData, setUserData] = useState({});
   const token = localStorage.getItem("token");
+  const [userRole, setUserRole] = useState("");
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -36,14 +37,23 @@ function Sidebar() {
   };
 
   useEffect(() => {
-    setUserData(JSON.parse(sessionStorage.getItem("auth_data")));
-  }, []);
+    if (!token) {
+      navigate("/login");
+    } else {
+      setUserData(JSON.parse(sessionStorage.getItem("auth_data")));
+    }
+  }, [token, navigate]);
+
+  useEffect(() => {
+    setUserRole(JSON.parse(localStorage.getItem("user"))?.user_type);
+  }, [userRole]);
 
   const handleLogoutProcess = async (e) => {
     e.preventDefault();
     try {
       const response = await axios.post(
-        `${import.meta.env.VITE_URL}/api/auth/logout/`,{},
+        `${import.meta.env.VITE_URL}/api/auth/logout/`,
+        {},
         {
           headers: {
             Authorization: `Token ${token}`,
@@ -61,7 +71,9 @@ function Sidebar() {
   };
 
   return (
-    <div>      {/* Top nav */}
+    <div>
+      {" "}
+      {/* Top nav */}
       <nav className="fixed top-0 w-full bg-white/95 backdrop-blur-md shadow-sm border-b border-pink-200 z-50">
         <div className="px-3 py-3 lg:py-3 lg:px-5 lg:pl-3">
           <div className="flex items-center justify-between">
@@ -88,15 +100,22 @@ function Sidebar() {
                 </svg>
               </Button>
               <a href={`/`} className="flex px-2">
-                <img src={newlogo} alt="logo" className="w-14 h-14 object-contain" />
+                <img
+                  src={newlogo}
+                  alt="logo"
+                  className="w-14 h-14 object-contain"
+                />
               </a>
             </div>
-            
+
             {/* User Menu */}
             <div className="flex items-center">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                  <Button
+                    variant="ghost"
+                    className="relative h-10 w-10 rounded-full"
+                  >
                     <Avatar className="h-10 w-10 ring-2 ring-pink-200">
                       <AvatarImage
                         src="https://flowbite.com/docs/images/people/profile-picture-5.jpg"
@@ -110,10 +129,16 @@ function Sidebar() {
                   <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col space-y-1">
                       <p className="text-sm font-medium leading-none">
-                        {JSON.parse(localStorage.getItem('user')).user.username || "User"}
+                        {localStorage.getItem("user")
+                          ? JSON.parse(localStorage.getItem("user")).user
+                              ?.username || "User"
+                          : "User"}
                       </p>
                       <p className="text-xs leading-none text-muted-foreground">
-                        {JSON.parse(localStorage.getItem('user')).profile_id || "sd2kf-kjd4f-jk4"}
+                        {localStorage.getItem("user")
+                          ? JSON.parse(localStorage.getItem("user"))
+                              .profile_id || "sd2kf-kjd4f-jk4"
+                          : "sd2kf-kjd4f-jk4"}
                       </p>
                     </div>
                   </DropdownMenuLabel>
@@ -136,7 +161,8 @@ function Sidebar() {
             </div>
           </div>
         </div>
-      </nav>      {/* Sidebar */}
+      </nav>{" "}
+      {/* Sidebar */}
       <aside
         id="logo-sidebar"
         className={`fixed top-0 left-0 z-40 h-screen pt-20 transition-transform duration-300 ${
@@ -172,12 +198,18 @@ function Sidebar() {
         </div>
 
         {/* Sidebar Logo */}
-        <div className="flex flex-col items-center mb-8">
+        {/* <div className="flex flex-col items-center mb-8">
           <div className="p-4 bg-gradient-to-br from-pink-100 to-pink-200 rounded-2xl shadow-md">
-            <img src={newlogo} alt="logo" className="w-20 h-20 object-contain" />
+            <img
+              src={newlogo}
+              alt="logo"
+              className="w-20 h-20 object-contain"
+            />
           </div>
-          <h2 className="mt-3 text-xl font-bold text-pink-700">Salon Manager</h2>
-        </div>
+          <h2 className="mt-3 text-xl font-bold text-pink-700">
+            Salon Manager
+          </h2>
+        </div> */}
 
         {/* Navigation Links */}
         <div className="h-full overflow-y-auto custom-scrollbar px-4">
@@ -192,7 +224,7 @@ function Sidebar() {
                 className="w-full justify-start h-10 hover:bg-pink-100 hover:text-pink-700 text-left"
                 asChild
               >
-                <Link to="/dashboard">
+                <Link to="/">
                   <svg
                     className="w-5 h-5 mr-3"
                     aria-hidden="true"
@@ -221,7 +253,10 @@ function Sidebar() {
                     <path d="M6 2v2H5a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3V7a3 3 0 0 0-3-3h-1V2h-2v2H8V2H6v2H3Zm-1 6V8h14v2H5Zm0 2h14v10H5V10Zm2 3v2h2v-2H7Zm4 0v2h6v-2h-6Z" />
                   </svg>
                   Appointments
-                  <Badge variant="secondary" className="ml-auto bg-pink-100 text-pink-700">
+                  <Badge
+                    variant="secondary"
+                    className="ml-auto bg-pink-100 text-pink-700"
+                  >
                     3
                   </Badge>
                 </Link>
@@ -242,7 +277,10 @@ function Sidebar() {
                     <path d="M3 5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H3Zm0 2h18v3H3V7Zm0 4h18v5H3v-5Z" />
                   </svg>
                   Payment
-                  <Badge variant="secondary" className="ml-auto bg-pink-100 text-pink-700">
+                  <Badge
+                    variant="secondary"
+                    className="ml-auto bg-pink-100 text-pink-700"
+                  >
                     2
                   </Badge>
                 </Link>
@@ -343,80 +381,86 @@ function Sidebar() {
             <Separator className="my-4" />
 
             {/* Management Section */}
-            <div className="space-y-1">
-              <p className="px-3 text-xs font-semibold text-pink-600 uppercase tracking-wider">
-                Management
-              </p>
-              <Button
-                variant="ghost"
-                className="w-full justify-start h-10 hover:bg-pink-100 hover:text-pink-700 text-left"
-                asChild
-              >
-                <Link to="/outlet-form">
-                  <svg
-                    className="w-5 h-5 mr-3"
-                    aria-hidden="true"
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
+            {userRole === "admin" ? (
+              <>
+                <div className="space-y-1">
+                  <p className="px-3 text-xs font-semibold text-pink-600 uppercase tracking-wider">
+                    Management
+                  </p>
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start h-10 hover:bg-pink-100 hover:text-pink-700 text-left"
+                    asChild
                   >
-                    <path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7" />
-                    <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
-                    <path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4" />
-                    <path d="M2 7h20" />
-                    <path d="M22 7v3a2 2 0 0 1-2 2 2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 16 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 12 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 8 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 4 12a2 2 0 0 1-2-2V7" />
-                  </svg>
-                  Outlets
-                </Link>
-              </Button>
+                    <Link to="/outlet-form">
+                      <svg
+                        className="w-5 h-5 mr-3"
+                        aria-hidden="true"
+                        fill="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7" />
+                        <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+                        <path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4" />
+                        <path d="M2 7h20" />
+                        <path d="M22 7v3a2 2 0 0 1-2 2 2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 16 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 12 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 8 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 4 12a2 2 0 0 1-2-2V7" />
+                      </svg>
+                      Outlets
+                    </Link>
+                  </Button>
 
-              <Button
-                variant="ghost"
-                className="w-full justify-start h-10 hover:bg-pink-100 hover:text-pink-700 text-left"
-                asChild
-              >
-                <Link to="/users">
-                  <svg
-                    className="w-5 h-5 mr-3"
-                    aria-hidden="true"
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start h-10 hover:bg-pink-100 hover:text-pink-700 text-left"
+                    asChild
                   >
-                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-                    <circle cx="9" cy="7" r="4" />
-                    <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                  </svg>
-                  Users
-                </Link>
-              </Button>
+                    <Link to="/users">
+                      <svg
+                        className="w-5 h-5 mr-3"
+                        aria-hidden="true"
+                        fill="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                        <circle cx="9" cy="7" r="4" />
+                        <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                      </svg>
+                      Users
+                    </Link>
+                  </Button>
 
-              <Button
-                variant="ghost"
-                className="w-full justify-start h-10 hover:bg-pink-100 hover:text-pink-700 text-left"
-                asChild
-              >
-                <Link to="/get-employee">
-                  <svg
-                    className="w-5 h-5 mr-3"
-                    aria-hidden="true"
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start h-10 hover:bg-pink-100 hover:text-pink-700 text-left"
+                    asChild
                   >
-                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-                    <circle cx="9" cy="7" r="4" />
-                    <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                  </svg>
-                  Employees
-                </Link>
-              </Button>
-            </div>
+                    <Link to="/get-employee">
+                      <svg
+                        className="w-5 h-5 mr-3"
+                        aria-hidden="true"
+                        fill="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                        <circle cx="9" cy="7" r="4" />
+                        <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                      </svg>
+                      Employees
+                    </Link>
+                  </Button>
+                </div>
 
-            <Separator className="my-4" />
+                <Separator className="my-4" />
+              </>
+            ) : (
+              <></> 
+            )}
 
             {/* Footer Menu: Profile & Logout */}
             <div className="space-y-1 pt-4">
-              <Button
+              {/* <Button
                 variant="ghost"
                 className="w-full justify-start h-10 hover:bg-blue-100 hover:text-blue-700 text-left"
                 asChild
@@ -434,7 +478,7 @@ function Sidebar() {
                   </svg>
                   Profile
                 </Link>
-              </Button>
+              </Button> */}
 
               <Button
                 variant="ghost"

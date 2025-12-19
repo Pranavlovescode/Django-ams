@@ -200,7 +200,7 @@ def outlets(request):
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
     if request.method == "POST":
-        name = request.data.get('name')
+        name = request.data.get('outlet_name')
         address = request.data.get('address')
         email = request.data.get('email')
         contact_number = request.data.get('telephone_number')
@@ -391,3 +391,62 @@ def package_function(request):
             return Response({
                 'message': f"Error creating package: {str(e)}"
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+
+"""User Details Route"""
+@api_view(["GET","POST"])
+@permission_classes([IsAuthenticated])
+def user_details(request):
+    if request.method == "GET":
+        user = request.user
+        try:
+            user_profile = UserProfile.objects.get(user=user)
+            profile_data = {
+                'profile_id': user_profile.profile_id,
+                'first_name': user_profile.first_name,
+                'last_name': user_profile.last_name,
+                'email': user_profile.email,
+                'phone_number': user_profile.phone_number,
+                'role': user_profile.role,
+            }
+            return Response({
+                'message': "User profile fetched successfully",
+                'user_profile': profile_data
+            }, status=status.HTTP_200_OK)
+        except UserProfile.DoesNotExist:
+            return Response({
+                'message': "User profile not found"
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+    if request.method == "POST":
+        user = request.user
+        try:
+            user_profile = UserProfile.objects.get(user=user)
+
+            # Update fields if provided in the request data
+            user_profile.first_name = request.data.get('first_name', user_profile.first_name)
+            user_profile.last_name = request.data.get('last_name', user_profile.last_name)
+            user_profile.email = request.data.get('email', user_profile.email)
+            user_profile.phone_number = request.data.get('phone_number', user_profile.phone_number)
+
+            user_profile.save()
+
+            profile_data = {
+                'profile_id': user_profile.profile_id,
+                'first_name': user_profile.first_name,
+                'last_name': user_profile.last_name,
+                'email': user_profile.email,
+                'phone_number': user_profile.phone_number,
+                'role': user_profile.role,
+            }
+
+            return Response({
+                'message': "User profile updated successfully",
+                'user_profile': profile_data
+            }, status=status.HTTP_200_OK)
+
+        except UserProfile.DoesNotExist:
+            return Response({
+                'message': "User profile not found"
+            }, status=status.HTTP_404_NOT_FOUND)
+

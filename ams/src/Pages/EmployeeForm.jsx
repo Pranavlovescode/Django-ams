@@ -13,6 +13,7 @@ const EmployeeForm = () => {
     outlet_id: null, 
   });
   const [outlets, setOutlets] = useState([]);
+  const [token, setToken] = useState(localStorage.getItem("token") || "");
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
@@ -36,10 +37,16 @@ const EmployeeForm = () => {
   useEffect(() => {
     const getOutlets = async () => {
       try {
-        const response = await axios.get("http://localhost:5000/api/outlet");
-        const outletOptions = response.data.map((outlet) => ({
-          value: outlet._id,
-          label: outlet.outlet_name,
+        const response = await axios.get(`${import.meta.env.VITE_URL}/app/outlet/`, {
+          headers: {
+            'Authorization': `Token ${token}`
+          }
+        }
+        );
+        // console.log("outlet fetched",response.data.outlets)
+        const outletOptions = response.data.outlets.map((outlet) => ({
+          value: outlet.outlet_id,
+          label: outlet.name,
         }));
         setOutlets(outletOptions);
       } catch (error) {

@@ -93,8 +93,10 @@ def signup_api(request):
     phone_number = request.data.get('phone_number')
     address = request.data.get('address')
     date_of_birth = request.data.get('dob')
-    user_type = request.data.get('user_type')
-    
+    first_name = request.data.get('first_name', '')
+    last_name = request.data.get('last_name', '')
+    user_type = 'customer'  # Default user type
+    print(f"request body: {request.data}")
     # Validate required fields
     if not all([user_type, date_of_birth, address, phone_number, username, password]):
         return Response(
@@ -112,7 +114,9 @@ def signup_api(request):
     # Create Django User
     django_user = DjangoUser.objects.create_user(
         username=username,
-        password=password  # This will be hashed automatically
+        password=password,  # This will be hashed automatically
+        first_name=first_name,
+        last_name=last_name
     )
     
     # Create the profile
@@ -169,3 +173,38 @@ def logout_api(request):
         {'message': 'Invalid token or not authenticated'}, 
         status=status.HTTP_401_UNAUTHORIZED
     )
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def user_details(request):
+    """
+    API endpoint to get details of the authenticated user
+    """
+    django_user = request.user
+    try:
+        custom_user = UserProfile.objects.get(user=django_user)
+        serializer = UserProfileSerializer(custom_user)
+        return Response({
+            'message': 'User details fetched successfully',
+            'user': serializer.data
+        }, status=status.HTTP_200_OK)
+    except UserProfile.DoesNotExist:
+        return Response(
+            {'message': 'User profile does not exist'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_all_users(request):
+    """
+    API endpoint to get details of all users
+    """
+    users = UserProfile.objects.all()
+    serializer = UserProfileSerializer(users, many=True)
+    return Response({
+        'message': 'All users fetched successfully',
+        'users': serializer.data
+    }, status=status.HTTP_200_OK)

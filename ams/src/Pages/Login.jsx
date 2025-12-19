@@ -38,7 +38,7 @@ function Login() {
         localStorage.setItem("token", data.token);
         localStorage.setItem("user", JSON.stringify(data.logged_in_user));
         localStorage.setItem("outlet", JSON.stringify(data.outlet));
-        navigate("/dashboard");
+        navigate("/");
       } else {
         alert("Login successful but no token received.");
       }

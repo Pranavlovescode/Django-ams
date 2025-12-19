@@ -25,7 +25,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 
 // Define colors for pie chart segments
@@ -57,10 +57,14 @@ export default function Dashboard() {
   const [appointments, setAppointments] = useState(0);
   const [completedAppointments, setCompletedAppointments] = useState(0);
   const [pendingAppointments, setPendingAppointments] = useState(0);
+  const navigate = useNavigate();
   useEffect(() => {
     // Get outlet name and ID from local storage
     const outletData = JSON.parse(localStorage.getItem("outlet")) || {};
     const token = localStorage.getItem("token") || "";
+    if(!token){
+      navigate("/login");
+    }
     setOutletName(outletData.name || "Salon Outlet");
     const today = new Date().toDateString();
     // Fetch today's appointment status breakdown from API

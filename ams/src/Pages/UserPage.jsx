@@ -33,9 +33,9 @@ const UserPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post(`${import.meta.env.VITE_URL}/api/user-customer/register`, formData,{
+      await axios.post(`${import.meta.env.VITE_URL}/app/user/`, formData,{
         headers:{
-          "Authorization":`Bearer ${token}`
+          "Authorization":`Token ${token}`
         }
       });
       console.log("User added successfully");
