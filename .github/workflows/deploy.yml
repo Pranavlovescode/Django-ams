@@ -21,8 +21,14 @@ jobs:
 
       - name: Build and Push Docker Image
         run: |
-          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/docflow:latest ./django_backend
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/docflow:latest
+          IMAGE_TAG=$(date +'%Y%m%d-%H%M%S')
+          echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
+
+          docker build \
+            -t ${{ secrets.DOCKERHUB_USERNAME }}/schedulo:$IMAGE_TAG \
+            ./django_backend
+
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/schedulo:$IMAGE_TAG
 
       - name: Trigger Render Deploy Hook
         run: |
