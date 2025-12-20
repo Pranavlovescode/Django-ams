@@ -32,4 +32,11 @@ jobs:
 
       - name: Trigger Render Deploy Hook
         run: |
-          curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK }}"
+          curl -X POST "https://api.render.com/v1/services/${{ secrets.RENDER_SERVICE_ID }}/deploys" \
+            -H "authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            -H "Accept: application/json" \
+            -d '{
+                        "clearCache": "do_not_clear",
+                        "imageUrl": "docker.io/'"${{ secrets.DOCKERHUB_USERNAME }}"'/schedulo:'"$IMAGE_TAG"'"
+                }'
