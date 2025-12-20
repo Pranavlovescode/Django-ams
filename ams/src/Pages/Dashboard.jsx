@@ -133,7 +133,7 @@ export default function Dashboard() {
       const response = await axios.get(
         `http://localhost:5000/api/get-all-appointments-staff-without-filter`,
         {
-          params: { outlet_id: outletId }, // Pass outlet_id as query param
+          params: { outlet_id: outletData.outlet_id }, // Pass outlet_id as query param
         }
       );
 

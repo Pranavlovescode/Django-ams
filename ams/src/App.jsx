@@ -28,6 +28,7 @@ import Dashboard from "@/Pages/Dashboard";
 import EmployeeForm from "@/Pages/EmployeeForm";
 import ManagerForm from "@/Pages/ManagerForm";
 import EmployeeTable from "@/Pages/EmployeeTable";
+import OutletManagement from "@/Pages/OutletManagement";
 
 function App() {
   const location = useLocation();
@@ -77,9 +78,13 @@ function App() {
               element={<BookAppointmentPage />}
             />
             <Route path="/package-master" element={<PackageMaster />} />
+            <Route path="/package/new" element={<PackageForm />} />
+            <Route path="/package/edit/:id" element={<PackageForm />} />
             <Route path="/add-package" element={<PackageForm />} />
             <Route path="/edit-package/:id" element={<PackageForm />} />
             <Route path="/services" element={<ServiceMaster />} />
+            <Route path="/service/new" element={<ServiceForm />} />
+            <Route path="/service/edit/:id" element={<ServiceForm />} />
             <Route path="/add-service" element={<ServiceForm />} />
             <Route path="/edit-service/:id" element={<ServiceForm />} />
             <Route path="/payment" element={<PaymentPage />} />
@@ -88,6 +93,7 @@ function App() {
             <Route path="/users" element={<UserTable />} />
             <Route path="/reports" element={<Reports />} />
             <Route path="/outlet-form" element={<OutletForm />} />
+            <Route path="/outlet-management" element={<OutletManagement />} />
             <Route path="/profilepage" element={<ProfilePage />} />
             <Route path="/employeeform" element={<EmployeeForm />} />
             <Route path="/managerform" element={<ManagerForm />} />
