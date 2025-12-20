@@ -71,15 +71,16 @@ export default function Dashboard() {
     const fetchAppointmentStatus = async () => {
       try {
         const response = await axios.get(
-          `${import.meta.env.VITE_URL}/api/appointment/get/${outletData.id}`,
+          `${import.meta.env.VITE_URL}/app/appointment/`,
           {
             headers: {
               Authorization: `Token ${token}`,
             },
+            params: { outlet_id: outletData.outlet_id}, // Pass outlet_id as query param
           }
         );
         // console.log(response)
-        const allAppointments = response.data;
+        const allAppointments = response.data.appointment;
         console.log(response.data);
         // Get today's date in string format to compare
 

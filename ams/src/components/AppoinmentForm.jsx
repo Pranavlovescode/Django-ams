@@ -16,6 +16,13 @@ import { Label } from "@/components/ui/label";
 import { CalendarDays, Phone, Package, Scissors, Plus, Save, X } from "lucide-react";
 
 const AppointmentForm = ({ appointment, onSave, onCancel }) => {
+  
+  const [allServices, setAllServices] = useState([]);
+  const [allPackages, setAllPackages] = useState([]);
+  const navigate = useNavigate();
+  const outlet_id = JSON.parse(localStorage.getItem("outlet"))?.outlet_id || null;
+  const token = localStorage.getItem("token") || "";
+
   const [formData, setFormData] = useState({
     servicesId: [],
     appointmentTime: "",
@@ -25,18 +32,12 @@ const AppointmentForm = ({ appointment, onSave, onCancel }) => {
     customer_mobile_phone: "",
   });
 
-  const [allServices, setAllServices] = useState([]);
-  const [allPackages, setAllPackages] = useState([]);
-  const navigate = useNavigate();
-  const outlet_id = JSON.parse(localStorage.getItem("outlet"))?.outlet_id || null;
-  const token = localStorage.getItem("token") || "";
-
   // Fetch services and packages on mount
   useEffect(() => {
     const fetchServicesAndPackages = async () => {
       try {
         const [servicesResponse, packagesResponse] = await Promise.all([
-          axios.get(`${import.meta.env.VITE_URL}/app/services/`, {
+          await axios.get(`${import.meta.env.VITE_URL}/app/services/`, {
             headers: { Authorization: `Token ${token}` },
             params: { outlet_id: outlet_id },
           }),
@@ -45,16 +46,16 @@ const AppointmentForm = ({ appointment, onSave, onCancel }) => {
             params: { outlet_id: outlet_id },
           }),
         ]);
-
-        const servicesOptions = servicesResponse.data.service.map((service) => ({
+        console.log(servicesResponse.data)
+        const servicesOptions = servicesResponse.data.services.map((service) => ({
           label: service.name,
-          id: service.id,
+          id: service.service_id,
           service_price: Number(service.price),
         }));
-
-        const packagesOptions = packagesResponse.data.package.map((pkg) => ({
+        console.log(packagesResponse.data)
+        const packagesOptions = packagesResponse.data.packages.map((pkg) => ({
           label: pkg.name,
-          id: pkg.id,
+          id: pkg.package_id,
           pkg_price: Number(pkg.price),
         }));
 
@@ -71,7 +72,7 @@ const AppointmentForm = ({ appointment, onSave, onCancel }) => {
   // Set outlet ID from localStorage
   useEffect(() => {
     const outlet = JSON.parse(localStorage.getItem("outlet"));
-    const outlet_id = outlet ? outlet.id : null;
+    const outlet_id = outlet ? outlet.outlet_id : null;
     if (outlet_id) {
       setFormData((prev) => ({
         ...prev,
@@ -83,15 +84,56 @@ const AppointmentForm = ({ appointment, onSave, onCancel }) => {
   // Pre-fill form if editing an appointment
   useEffect(() => {
     if (appointment) {
+      console.log("Received appointment for editing:", appointment);
+      
+      // Convert ISO datetime to datetime-local format (YYYY-MM-DDTHH:mm)
+      let localDateTime = "";
+      const timeField = appointment.appointmentTime || appointment.appointment_time;
+      
+      if (timeField) {
+        const date = new Date(timeField);
+        // Format to YYYY-MM-DDTHH:mm for datetime-local input
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        localDateTime = `${year}-${month}-${day}T${hours}:${minutes}`;
+      }
+      
+      // Extract service IDs from nested service objects
+      const serviceIds = appointment.servicesId?.map((s) => s.id || s.service_id) || 
+                        appointment.services?.map((s) => s.id || s.service_id) || [];
+      
+      // Extract package IDs from nested package objects
+      const packageIds = appointment.packagesId?.map((p) => p.id || p.package_id) || 
+                        appointment.packages?.map((p) => p.id || p.package_id) || [];
+      
+      // Get customer info - handle both direct userId and nested customer object
+      const customerId = appointment.userId || 
+                        appointment.customer?.profile_id || 
+                        appointment.customer?.id || 0;
+      
+      const customerPhone = appointment.customer_mobile_phone || 
+                           appointment.customer?.phone_number || "";
+      
       setFormData((prev) => ({
         ...prev,
-        ...appointment,
-        servicesId: appointment.servicesId?.map((s) => s.id) || [],
-        packagesId: appointment.packagesId?.map((p) => p.id) || [],
-        appointmentTime: appointment.appointmentTime || "",
-        customer_mobile_phone: appointment.customer_mobile_phone || "",
-        userId: appointment.userId || 0,
+        servicesId: serviceIds,
+        packagesId: packageIds,
+        appointmentTime: localDateTime,
+        customer_mobile_phone: customerPhone,
+        userId: customerId,
+        outletId: appointment.outletId || appointment.outlet?.outlet_id || prev.outletId,
       }));
+      
+      console.log("Form data set to:", {
+        servicesId: serviceIds,
+        packagesId: packageIds,
+        appointmentTime: localDateTime,
+        customer_mobile_phone: customerPhone,
+        userId: customerId,
+      });
     }
   }, [appointment]);
 
@@ -126,33 +168,30 @@ const AppointmentForm = ({ appointment, onSave, onCancel }) => {
     }));
   };
 
-  // Load mobile numbers dynamically
+  // Load mobile numbers dynamically with debouncing
   const fetchMobileNumbers = async (inputValue) => {
-    if (!inputValue) return [];
+    // Require at least 3 digits for search
+    if (!inputValue || inputValue.length < 3) return [];
+    
     try {
       const response = await axios.get(
-          `${import.meta.env.VITE_URL}/api/user/mobile?mobile_number=${inputValue}`,
-          { headers: { Authorization: `Bearer ${token}` } }
+          `${import.meta.env.VITE_URL}/app/user/mobile/`,
+          { 
+            headers: { Authorization: `Token ${token}` },
+            params: { mobile_number: inputValue }
+          }
       );
 
-      if (response.data && !Array.isArray(response.data)) {
-        const user = response.data;
-        return [
-          {
-            label: `${user.username || "Unknown"} (${user.mobileNumber})`,
-            value: user.mobileNumber,
-            userData: user,
-          },
-        ];
-      } else if (Array.isArray(response.data) && response.data.length > 0) {
+      // Backend now returns an array directly
+      if (Array.isArray(response.data) && response.data.length > 0) {
         return response.data.map((user) => ({
-          label: `${user.name || "Unknown"} (${user.mobileNumber})`,
+          label: `${user.name} (${user.mobileNumber})`,
           value: user.mobileNumber,
           userData: user,
         }));
-      } else {
-        return [];
       }
+      
+      return [];
     } catch (error) {
       console.error("Error fetching users:", error);
       return [];
@@ -195,7 +234,17 @@ const AppointmentForm = ({ appointment, onSave, onCancel }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSave(formData);
+    
+    // Convert datetime-local to ISO string for backend
+    const submitData = {
+      ...formData,
+      appointmentTime: formData.appointmentTime 
+        ? new Date(formData.appointmentTime).toISOString()
+        : ""
+    };
+    
+    console.log("Submitting appointment data:", submitData);
+    onSave(submitData);
   };
 
   // Pre-select services and packages

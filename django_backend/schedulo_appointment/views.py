@@ -27,37 +27,61 @@ def appointments_details(request):
 
     
     if request.method == 'POST':
-        customer_id = request.data.get('customer_id')
-        outlet_id = request.data.get('outlet_id')
-        employee_id = request.data.get('employee_id')
-        services_ids = request.data.get('services_id')
-        packages_ids = request.data.get('packages_id')
-        appointment_time = request.data.get('appointment_time')
+        customer_id = request.data.get('userId')
+        outlet_id = request.data.get('outletId')
+        employee_id = request.data.get('employeeId')
+        services_ids = request.data.get('servicesId')
+        packages_ids = request.data.get('packagesId')
+        appointment_time = request.data.get('appointmentTime')
         services = []
         packages = []
+        print("outlet id",outlet_id)
+        print("customer id",customer_id)
+        if not services_ids and not packages_ids:
+            return Response({
+                'message': "At least one service or package must be provided"
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        if services_ids is None:
+            pass
+        else:
+            # Validate services
+            for service_id in services_ids:
+                try:
+                    service = Service.objects.get(service_id=service_id)
+                    services.append(service)
+                except Service.DoesNotExist:
+                    return Response({
+                        'message': f"Service with ID {service_id} does not exist"
+                    }, status=status.HTTP_404_NOT_FOUND)
 
-        for service_id in services_ids:
-            try:
-                service = Service.objects.get(service_id=service_id)
-                services.append(service)
-            except Service.DoesNotExist:
-                return Response({
-                    'message': f"Service with ID {service_id} does not exist"
-                }, status=status.HTTP_404_NOT_FOUND)
-
-        for package_id in packages_ids:
-            try:
-                package = Package.objects.get(package_id=package_id)
-                packages.append(package)
-            except Package.DoesNotExist:
-                return Response({
-                    'message': f"Package with ID {package_id} does not exist"
-                }, status=status.HTTP_404_NOT_FOUND)
+        if packages_ids is None:
+            pass
+        else:
+            for package_id in packages_ids:
+                try:
+                    package = Package.objects.get(package_id=package_id)
+                    packages.append(package)
+                except Package.DoesNotExist:
+                    return Response({
+                        'message': f"Package with ID {package_id} does not exist"
+                    }, status=status.HTTP_404_NOT_FOUND)
 
         try:
             customer = UserProfile.objects.get(profile_id=customer_id)
+            print("customer", customer)
             outlet = Outlet.objects.get(outlet_id=outlet_id)
-            employee = UserProfile.objects.get(profile_id=employee_id)
+            
+            # Employee is optional - only fetch if provided
+            employee = None
+            if employee_id:
+                try:
+                    employee = UserProfile.objects.get(profile_id=employee_id)
+                except UserProfile.DoesNotExist:
+                    return Response({
+                        'message': f"Employee with ID {employee_id} does not exist"
+                    }, status=status.HTTP_404_NOT_FOUND)
+            
             new_appointment = Appointment(
                 customer=customer,
                 outlet=outlet,
@@ -80,11 +104,20 @@ def appointments_details(request):
                 'appointment': appointment_serializer.data
             }, status=status.HTTP_201_CREATED)
         
-
         except UserProfile.DoesNotExist:
             return Response({
-                'message': "UserProfile not found for the provided IDs"
+                'message': f"Customer with ID {customer_id} not found"
             }, status=status.HTTP_404_NOT_FOUND)
+        
+        except Outlet.DoesNotExist:
+            return Response({
+                'message': f"Outlet with ID {outlet_id} not found"
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+        except Exception as e:
+            return Response({
+                'message': f"Error creating appointment: {str(e)}"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
 
     if request.method == "PATCH":
@@ -130,7 +163,7 @@ def appointments_details(request):
                 if services_ids:
                     appointment.services.set(services)
                 if packages_ids:
-                    appointment.package.set(packages)
+                    appointment.packages.set(packages)
 
                 return Response({
                     'message': "Appointment updated successfully",
@@ -168,6 +201,45 @@ def appointments_details(request):
                 'message': f"Appointment with ID {appointment_id} does not exist"
             }, status=status.HTTP_404_NOT_FOUND)
 
+
+@api_view(["PATCH"])
+@permission_classes([IsAuthenticated])
+def appointment_status_update(request):
+    appointment_id = request.query_params.get('appointment_id')
+    status_value = request.query_params.get("status")
+    if request.method == "PATCH":
+        try:
+            appointment = Appointment.objects.get(appointment_id=appointment_id)
+            appointment.status = status_value
+            appointment.save()
+            return Response({
+                'message': f"Appointment status updated to {status_value} successfully",
+                'appointment': AppointmentSerializer(appointment).data
+            }, status=status.HTTP_200_OK)
+        except Appointment.DoesNotExist:
+            return Response({
+                'message': f"Appointment with ID {appointment_id} does not exist"
+            }, status=status.HTTP_404_NOT_FOUND)
+    
+    if request.method == "DELETE":
+        appointment_id = request.query_params.get('appointment_id')
+
+        if not appointment_id:
+            return Response({
+                'message': "Missing appointment_id in query parameters"
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            appointment = Appointment.objects.get(appointment_id=appointment_id)
+            appointment.delete()
+            return Response({
+                'message': "Appointment deleted successfully"
+            }, status=status.HTTP_200_OK) 
+
+        except Appointment.DoesNotExist:
+            return Response({
+                'message': f"Appointment with ID {appointment_id} does not exist"
+            }, status=status.HTTP_404_NOT_FOUND)
 
 
 
@@ -661,4 +733,36 @@ def user_details(request):
             return Response({
                 'message': "User profile not found"
             }, status=status.HTTP_404_NOT_FOUND)
+
+
+
+"""Find User by Mobile Number - Supports partial search"""
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def find_by_mobile(request):
+    mobile_number = request.query_params.get('mobile_number')
+    if not mobile_number:
+        return Response({
+            'message': "Missing mobile_number in query parameters"
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Search for users whose phone number contains the input (partial match)
+    user_profiles = UserProfile.objects.filter(phone_number__icontains=mobile_number)[:10]  # Limit to 10 results
+    
+    if user_profiles.exists():
+        serializer = UserProfileSerializer(user_profiles, many=True)
+        # Transform the data to match frontend expectations
+        users_data = []
+        for profile in serializer.data:
+            users_data.append({
+                'id': profile['profile_id'],
+                'name': f"{profile['user']['first_name']} {profile['user']['last_name']}".strip() or profile['user']['username'],
+                'username': profile['user']['username'],
+                'mobileNumber': profile['phone_number'],
+                'email': profile['user']['email']
+            })
+        
+        return Response(users_data, status=status.HTTP_200_OK)
+    else:
+        return Response([], status=status.HTTP_200_OK)
 

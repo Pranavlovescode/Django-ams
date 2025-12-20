@@ -32,40 +32,87 @@ const timeSlots = [
 
 const filterconfirmAppointments = (confirmappointments, filter, timeSlot) => {
   const now = new Date();
-  let filteredconfirmAppointments = confirmappointments;
+  // Reset time to start of today for accurate date comparisons
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+  const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+  
+  let filteredconfirmAppointments = [...confirmappointments]; // Create a copy to avoid mutation
 
   switch (filter) {
+    case "All":
+      // Show all appointments without date filtering
+      break;
+      
     case "Today":
       filteredconfirmAppointments = filteredconfirmAppointments.filter(
         (appointment) => {
-          const inTime = new Date(appointment.appointment_time);
-          return inTime.toDateString() === now.toDateString();
+          const appointmentTime = new Date(appointment.appointment_time);
+          return appointmentTime >= todayStart && appointmentTime <= todayEnd;
+        }
+      );
+      break;
+
+    case "Upcoming":
+      filteredconfirmAppointments = filteredconfirmAppointments.filter(
+        (appointment) => {
+          const appointmentTime = new Date(appointment.appointment_time);
+          return appointmentTime >= now;
+        }
+      );
+      break;
+
+    case "This Week":
+      const weekStart = new Date(todayStart);
+      weekStart.setDate(todayStart.getDate() - todayStart.getDay()); // Start of week (Sunday)
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekStart.getDate() + 7);
+      
+      filteredconfirmAppointments = filteredconfirmAppointments.filter(
+        (appointment) => {
+          const appointmentTime = new Date(appointment.appointment_time);
+          return appointmentTime >= weekStart && appointmentTime < weekEnd;
         }
       );
       break;
 
     case "Last Week":
-      const oneWeekAgo = new Date(now);
-      oneWeekAgo.setDate(now.getDate() - 7);
+      const lastWeekEnd = new Date(todayStart);
+      lastWeekEnd.setDate(todayStart.getDate() - todayStart.getDay()); // Start of this week = end of last week
+      const lastWeekStart = new Date(lastWeekEnd);
+      lastWeekStart.setDate(lastWeekEnd.getDate() - 7);
+      
       filteredconfirmAppointments = filteredconfirmAppointments.filter(
         (appointment) => {
-          const inTime = new Date(appointment.appointment_time);
-          return inTime > oneWeekAgo && inTime <= now;
+          const appointmentTime = new Date(appointment.appointment_time);
+          return appointmentTime >= lastWeekStart && appointmentTime < lastWeekEnd;
+        }
+      );
+      break;
+
+    case "This Month":
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+      const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+      
+      filteredconfirmAppointments = filteredconfirmAppointments.filter(
+        (appointment) => {
+          const appointmentTime = new Date(appointment.appointment_time);
+          return appointmentTime >= monthStart && appointmentTime <= monthEnd;
         }
       );
       break;
 
     case "Last Month":
-      const oneMonthAgo = new Date(now);
-      oneMonthAgo.setMonth(now.getMonth() - 1);
+      const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1, 0, 0, 0, 0);
+      const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+      
       filteredconfirmAppointments = filteredconfirmAppointments.filter(
         (appointment) => {
-          const inTime = new Date(appointment.appointment_time);
-          return inTime > oneMonthAgo && inTime <= now;
+          const appointmentTime = new Date(appointment.appointment_time);
+          return appointmentTime >= lastMonthStart && appointmentTime <= lastMonthEnd;
         }
       );
       break;
-
+      
     default:
       break;
   }
@@ -76,7 +123,7 @@ const filterconfirmAppointments = (confirmappointments, filter, timeSlot) => {
 
     filteredconfirmAppointments = filteredconfirmAppointments.filter(
       (appointment) => {
-        const appointmentTime = new Date(appointment.time);
+        const appointmentTime = new Date(appointment.appointment_time);
         const appointmentHours = appointmentTime.getHours();
         const appointmentMinutes = appointmentTime.getMinutes();
 
@@ -98,7 +145,7 @@ const filterconfirmAppointments = (confirmappointments, filter, timeSlot) => {
 };
 
 const ConfirmedAppointments = ({ confirmappointments, onRefresh }) => {
-  const [filter, setFilter] = useState("Today");
+  const [filter, setFilter] = useState("All");
   const [selectedTimeSlot, setSelectedTimeSlot] = useState(null);
 
   const handleDelete = async (id) => {
@@ -108,7 +155,16 @@ const ConfirmedAppointments = ({ confirmappointments, onRefresh }) => {
     if (confirmDelete) {
       try {
         const response = await axios.delete(
-          `http://localhost:5000/api/delete-appointment-staff/${id}`
+          `${import.meta.env.VITE_URL}/app/appointment/`,
+          {
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Token ${localStorage.getItem("token")}`,
+            },
+            params: {
+              appointment_id: id,
+            },
+          }
         );
         console.log(response.data.message);
         if (onRefresh) {
@@ -121,8 +177,10 @@ const ConfirmedAppointments = ({ confirmappointments, onRefresh }) => {
   };
 
   useEffect(() => {
-    console.log("Confirmed Appointments", confirmappointments);
-  }, [confirmappointments]);
+    console.log("Confirmed Appointments received:", confirmappointments);
+    console.log("Current filter:", filter);
+    console.log("Filtered confirmed appointments:", filterconfirmAppointments(confirmappointments, filter, selectedTimeSlot));
+  }, [confirmappointments, filter, selectedTimeSlot]);
 
   const filteredconfirmAppointments = filterconfirmAppointments(
     confirmappointments,
@@ -135,12 +193,16 @@ const ConfirmedAppointments = ({ confirmappointments, onRefresh }) => {
         <div className="flex flex-col gap-2">
           <label className="text-sm font-semibold text-pink-700">Sort by:</label>
           <Select value={filter} onValueChange={setFilter}>
-            <SelectTrigger className="w-40">
+            <SelectTrigger className="w-48">
               <SelectValue placeholder="Select Range" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="All">All Appointments</SelectItem>
               <SelectItem value="Today">Today</SelectItem>
+              <SelectItem value="Upcoming">Upcoming</SelectItem>
+              <SelectItem value="This Week">This Week</SelectItem>
               <SelectItem value="Last Week">Last Week</SelectItem>
+              <SelectItem value="This Month">This Month</SelectItem>
               <SelectItem value="Last Month">Last Month</SelectItem>
             </SelectContent>
           </Select>
@@ -185,50 +247,61 @@ const ConfirmedAppointments = ({ confirmappointments, onRefresh }) => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredconfirmAppointments.map((appointment) => (
-              <TableRow key={appointment.id} className="hover:bg-pink-50">
-                <TableCell className="text-center">
-                  {appointment.user.name}
-                </TableCell>
-                <TableCell className="text-center">
-                  {appointment.services.map((service, index) => (
-                    <div key={index}>{service.name}</div>
-                  ))}
-                </TableCell>
-                <TableCell className="text-center">
-                  {appointment.packages.map((pkg, index) => (
-                    <div key={index}>{pkg.name}</div>
-                  ))}
-                </TableCell>
-                <TableCell className="text-center">
-                  {new Date(appointment.appointment_time).toLocaleString()}
-                </TableCell>
-                <TableCell className="text-center">
-                  <div className="flex justify-center gap-2">
-                    <Button
-                      variant="destructive"
-                      onClick={() => handleDelete(appointment.id)}
-                    >
-                      Cancel
-                    </Button>
-                    <Link
-                      to={`/edit-appointment/${appointment.id}`}
-                      state={{
-                        appointment: {
-                          ...appointment,
-                          services: appointment.services,
-                          packages: appointment.packages,
-                          time: appointment.appointment_time,
-                        },
-                      }}
-                      className="text-blue-500 hover:underline"
-                    >
-                      <img src={edit} alt="Edit" className="h-5 w-5" />
-                    </Link>
-                  </div>
+            {filteredconfirmAppointments.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center py-8 text-gray-500">
+                  No confirmed appointments found for the selected filter
                 </TableCell>
               </TableRow>
-            ))}
+            ) : (
+              filteredconfirmAppointments.map((appointment) => (
+                <TableRow key={appointment.appointment_id} className="hover:bg-pink-50">
+                  <TableCell className="text-center">
+                    {appointment.customer?.user?.first_name || ''} {appointment.customer?.user?.last_name || ''}
+                  </TableCell>
+                  <TableCell className="text-center">
+                    {appointment.services?.length > 0 ? (
+                      appointment.services.map((service, index) => (
+                        <div key={index}>{service.name}</div>
+                      ))
+                    ) : (
+                      <span className="text-gray-400">No services</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-center">
+                    {appointment.packages?.length > 0 ? (
+                      appointment.packages.map((pkg, index) => (
+                        <div key={index}>{pkg.name}</div>
+                      ))
+                    ) : (
+                      <span className="text-gray-400">No packages</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-center">
+                    {new Date(appointment.appointment_time).toLocaleString()}
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <div className="flex justify-center gap-2">
+                      <Button
+                        variant="destructive"
+                        onClick={() => handleDelete(appointment.appointment_id)}
+                      >
+                        Cancel
+                      </Button>
+                      <Link
+                        to={`/edit-appointment/${appointment.appointment_id}`}
+                        state={{
+                          appointment: appointment
+                        }}
+                        className="text-blue-500 hover:underline"
+                      >
+                        <img src={edit} alt="Edit" className="h-5 w-5" />
+                      </Link>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </div>

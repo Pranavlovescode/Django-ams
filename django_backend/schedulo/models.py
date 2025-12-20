@@ -158,6 +158,8 @@ class Payment(models.Model):
         ('completed', 'Completed'),
         ('failed', 'Failed'),
         ('refunded', 'Refunded'),
+        ('cancelled', 'Cancelled'),
+        ('confirmed', 'Confirmed'),
     )
     
     PAYMENT_METHOD = (

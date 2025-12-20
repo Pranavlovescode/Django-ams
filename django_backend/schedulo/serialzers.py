@@ -20,6 +20,23 @@ class OutletSerializer(serializers.ModelSerializer):
         model = Outlet
         fields = ['outlet_id','name','email','contact_number','manager','address','opening_time','closing_time','is_active']
 
+# Simplified serializers for nested relationships to avoid circular dependencies
+class SimpleServiceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Service
+        fields = ['service_id','name','description','duration','price','category']
+
+class SimplePackageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Package
+        fields = ['package_id','name','category','duration','description','price']
+
+class SimpleUserProfileSerializer(serializers.ModelSerializer):
+    user = UserSerializer()
+    class Meta:
+        model = UserProfile
+        fields = ['profile_id','user_type','phone_number','user']
+
 class ServiceSerializer(serializers.ModelSerializer):
     outlets = OutletSerializer(many=True)
     class Meta:
@@ -36,10 +53,10 @@ class PackageSerializer(serializers.ModelSerializer):
 
 class AppointmentSerializer(serializers.ModelSerializer):
     outlet = OutletSerializer()
-    employee = UserProfileSerializer()
-    services=ServiceSerializer(many=True)
-    packages=PackageSerializer(many=True)
-    customer = UserProfileSerializer()
+    employee = SimpleUserProfileSerializer(allow_null=True)
+    services = SimpleServiceSerializer(many=True)
+    packages = SimplePackageSerializer(many=True)
+    customer = SimpleUserProfileSerializer()
     class Meta:
         model = Appointment
         fields = ['appointment_id','customer','outlet','employee','appointment_time','services','packages','status','notes','created_at','updated_at']
