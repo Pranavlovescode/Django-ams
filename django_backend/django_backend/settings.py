@@ -36,7 +36,7 @@ SECRET_KEY = 'django-insecure-fh*1&xb*)+ye7kzqs!_%^8=y&z&rsmdlym*de$40z8t&*q$kl%
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1','schedulo.pranavtitambe.in','localhost']
+ALLOWED_HOSTS = ['127.0.0.1','schedulo.pranavtitambe.in','localhost','schedulo-first.onrender.com']
 
 
 REST_FRAMEWORK = {
